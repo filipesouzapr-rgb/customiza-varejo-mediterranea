@@ -1,0 +1,305 @@
+.login-page {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.login-form {
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 28px 30px;
+  box-shadow: 0 12px 32px -12px rgba(10, 28, 77, 0.25);
+}
+
+.login-form h1 {
+  font-size: 19px;
+  color: var(--blue-primary);
+  margin: 0 0 4px;
+}
+
+.login-erro {
+  color: var(--red);
+  font-size: 13px;
+}
+
+label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  text-align: left;
+}
+
+input,
+select {
+  font: inherit;
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: normal;
+  padding: 9px 11px;
+  border: 1.5px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--text-h);
+}
+
+input:focus,
+select:focus {
+  border-color: var(--blue-bright);
+  outline: none;
+}
+
+button {
+  font: inherit;
+  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 4px;
+  border: 1px solid var(--blue-primary);
+  background: var(--blue-primary);
+  color: #ffffff;
+  cursor: pointer;
+}
+
+button:hover {
+  background: var(--blue-bright);
+  border-color: var(--blue-bright);
+}
+
+button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.app-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  padding: 12px 24px;
+  background: linear-gradient(180deg, var(--blue-bright), var(--blue-primary));
+  border-bottom: 3px solid var(--blue-deep);
+}
+
+.app-titulo {
+  font-weight: 700;
+  color: #ffffff;
+}
+
+.app-header nav {
+  display: flex;
+  gap: 20px;
+  flex: 1;
+}
+
+.app-header nav a {
+  color: #d7e0fa;
+  text-decoration: none;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.app-header nav a.active {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.app-header button {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.app-header button:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+main {
+  padding: 24px;
+  text-align: left;
+}
+
+.produtos-page {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.produtos-form {
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 18px;
+}
+
+.produtos-form form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.produtos-form-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+.produtos-lista {
+  flex: 1;
+  min-width: 480px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13.5px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+
+th {
+  font-family: var(--mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  background: var(--surface-tint);
+  font-weight: 600;
+}
+
+tr.inativo {
+  opacity: 0.5;
+}
+
+.produtos-lista-acoes {
+  display: flex;
+  gap: 6px;
+}
+
+.erro {
+  color: var(--red);
+  font-weight: 500;
+}
+
+.fiado-page {
+  display: flex;
+  gap: 32px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+.fiado-lista {
+  width: 320px;
+}
+
+.fiado-lista tbody tr {
+  cursor: pointer;
+}
+
+.fiado-lista tbody tr:hover {
+  background: var(--surface-tint);
+}
+
+.fiado-lista tbody tr.selecionado {
+  background: var(--surface-tint);
+  box-shadow: inset 3px 0 0 var(--blue-primary);
+}
+
+.fiado-detalhe {
+  flex: 1;
+  min-width: 420px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.fiado-saldo-atual {
+  font-family: var(--mono);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--blue-primary);
+}
+
+.fiado-periodo {
+  display: flex;
+  gap: 16px;
+}
+
+.fiado-form-pagamento {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.dashboard-page {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.dashboard-cards {
+  display: flex;
+  gap: 16px;
+}
+
+.dashboard-card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px 20px;
+  min-width: 200px;
+  border-top: 3px solid var(--blue-primary);
+}
+
+.dashboard-card-titulo {
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+}
+
+.dashboard-card-valor {
+  font-family: var(--mono);
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--text-h);
+  font-variant-numeric: tabular-nums;
+}
+
+.dashboard-card-sub {
+  font-size: 12px;
+  color: var(--text);
+}

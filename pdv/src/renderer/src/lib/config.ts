@@ -1,0 +1,1 @@
+export const NOME_ESTABELECIMENTO = import.meta.env.RENDERER_VITE_NOME_ESTABELECIMENTO || 'Padaria BDI'

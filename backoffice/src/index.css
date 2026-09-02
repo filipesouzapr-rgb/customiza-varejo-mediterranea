@@ -1,0 +1,94 @@
+@import '@fontsource/ibm-plex-sans/400.css';
+@import '@fontsource/ibm-plex-sans/500.css';
+@import '@fontsource/ibm-plex-sans/600.css';
+@import '@fontsource/ibm-plex-sans/700.css';
+@import '@fontsource/ibm-plex-mono/400.css';
+@import '@fontsource/ibm-plex-mono/500.css';
+@import '@fontsource/ibm-plex-mono/600.css';
+@import '@fontsource/ibm-plex-mono/700.css';
+
+:root {
+  --blue-deep: #0a1c4d;
+  --blue-primary: #1c3fa8;
+  --blue-bright: #2a52d6;
+  --surface: #ffffff;
+  --surface-tint: #eef2fb;
+  --surface-mute: #dbe4f7;
+  --ink: #10193a;
+  --ink-soft: #4a5578;
+  --border: #c3d0ec;
+  --gold: #e8a600;
+  --cyan: #5fe0e8;
+  --green: #2fae63;
+  --red: #c81e1e;
+
+  --text: var(--ink-soft);
+  --text-h: var(--ink);
+  --bg: var(--surface-tint);
+  --code-bg: var(--surface);
+
+  --sans: 'IBM Plex Sans', system-ui, 'Segoe UI', sans-serif;
+  --heading: 'IBM Plex Sans', system-ui, 'Segoe UI', sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+
+  font: 15px/1.55 var(--sans);
+  color-scheme: light;
+  color: var(--text);
+  background: var(--bg);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+}
+
+h1,
+h2 {
+  font-family: var(--heading);
+  font-weight: 700;
+  color: var(--text-h);
+}
+
+h1 {
+  font-size: 22px;
+  margin: 0 0 6px;
+}
+
+h2 {
+  font-size: 15px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--blue-primary);
+  margin: 0 0 12px;
+}
+
+p {
+  margin: 0;
+}
+
+code,
+.counter {
+  font-family: var(--mono);
+  display: inline-flex;
+  border-radius: 4px;
+  color: var(--text-h);
+}
+
+code {
+  font-size: 13px;
+  line-height: 135%;
+  padding: 3px 7px;
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+}
