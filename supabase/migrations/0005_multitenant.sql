@@ -22,6 +22,19 @@ create table empresas (
   criado_em timestamptz not null default now()
 );
 
+-- Este projeto Supabase tem "Automatically expose new tables" desligado, o
+-- que so acontece quando tabelas/sequences sao criadas via SQL puro (nao
+-- pelo Table Editor) - GRANT nao vem de graca, mesmo que a tabela tenha RLS
+-- habilitado. Sem isso o PostgREST rejeita qualquer acesso antes mesmo de
+-- chegar a avaliar as policies. Toda migration daqui pra frente que criar
+-- tabela/sequence nova precisa do mesmo par de GRANT abaixo.
+grant select, insert, update, delete on empresas to authenticated;
+
+-- A sequence de codigo_interno (criada na 0002) precisou do mesmo ajuste
+-- manual num projeto novo - reforcando aqui pra este arquivo ficar
+-- autossuficiente se algum dia for usado pra subir um projeto do zero.
+grant usage, select on sequence produtos_codigo_interno_seq to authenticated;
+
 -- =========================================================================
 -- 2. empresa_id NAS TABELAS EXISTENTES
 -- =========================================================================
