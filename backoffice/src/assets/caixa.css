@@ -1,0 +1,575 @@
+/* Estilos da tela de caixa. Namespaced pelas classes abaixo (terminal-*,
+   cart-*, etc.) — não deveriam colidir com as classes do admin
+   (produtos-*, dashboard-*, fiado-*) em App.css. */
+
+:root {
+  --font-mono: 'IBM Plex Mono', ui-monospace, Consolas, monospace;
+}
+
+.terminal-page {
+  flex: 1;
+  display: flex;
+  background: var(--blue-deep);
+  padding: 20px;
+}
+
+.terminal {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 30px 60px -24px rgba(0, 0, 0, 0.55);
+  min-width: 0;
+}
+
+.titlebar {
+  background: linear-gradient(180deg, var(--blue-bright), var(--blue-primary));
+  padding: 14px 24px;
+  text-align: center;
+  border-bottom: 3px solid var(--blue-deep);
+  flex-shrink: 0;
+}
+
+.titlebar-text {
+  color: #ffffff;
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.terminal-content {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.tela-central {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.form-largo {
+  width: 320px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.login-logo {
+  height: 30px;
+  align-self: flex-start;
+  margin-bottom: 4px;
+}
+
+.form-largo h1 {
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--blue-primary);
+  margin-bottom: 4px;
+}
+
+/* ---- topbar de navegação da tela de caixa (sair / voltar ao admin) ---- */
+
+.caixa-topbar {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 30;
+}
+
+.caixa-topbar a {
+  color: #ffffff;
+  font-size: 12.5px;
+  font-weight: 600;
+  text-decoration: none;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: 4px;
+  padding: 7px 12px;
+}
+
+.caixa-topbar button {
+  font-size: 12.5px;
+  padding: 7px 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+/* ---- venda: two-column body ---- */
+
+.col-left {
+  flex: 1;
+  padding: 20px 22px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+  overflow-y: auto;
+}
+
+.col-right {
+  width: 380px;
+  flex-shrink: 0;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--surface-tint);
+  overflow-y: auto;
+}
+
+.brand-card {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 18px;
+}
+
+.brand-card img {
+  height: 24px;
+  display: block;
+}
+
+.brand-card .brand-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--blue-primary);
+  letter-spacing: 0.02em;
+}
+
+.scan-row label {
+  margin-bottom: 6px;
+}
+
+.scan-input {
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+  padding: 12px 14px;
+  border-width: 2px;
+}
+
+.scan-hint {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  text-transform: none;
+  font-weight: 400;
+  letter-spacing: normal;
+}
+
+.venda-peso {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.venda-peso-acoes {
+  display: flex;
+  gap: 8px;
+}
+
+/* itemized cart list — só item/descrição/qtd/remover, sem nenhum valor */
+
+.cart {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  overflow-x: auto;
+}
+
+.cart-head,
+.cart-row {
+  display: grid;
+  grid-template-columns: 2.6em minmax(0, 1fr) minmax(3.5em, max-content) auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.cart-head {
+  color: var(--ink-soft);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.cart-row {
+  padding: 4px 0;
+}
+
+.cart-row + .cart-row {
+  border-top: 1px dotted var(--border);
+}
+
+.cart-row button {
+  padding: 2px 8px;
+  font-size: 11px;
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-color: var(--border);
+}
+
+.cart-row button:hover {
+  background: var(--surface-tint);
+}
+
+.cart-num {
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
+.cart-desc {
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.cart-desc .cart-code {
+  color: var(--ink-soft);
+  font-size: 11px;
+  margin-right: 6px;
+}
+
+.cart-qty {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+  color: var(--ink-soft);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cart-qty-input {
+  width: 4.5em;
+  padding: 3px 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  text-align: right;
+}
+
+/* cliente box */
+
+.cliente-box {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+
+.cliente-box.obrigatorio-pendente {
+  border-color: var(--red);
+}
+
+.cliente-header {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--blue-primary);
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.cliente-rule {
+  border: none;
+  border-top: 1px dotted var(--border);
+  margin: 0 0 8px;
+}
+
+.cliente-linha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+
+.cliente-nome {
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+  color: var(--ink);
+}
+
+.cliente-nome b {
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+
+.venda-cliente-vazio {
+  font-size: 12.5px;
+  color: var(--ink-soft);
+}
+
+/* status bar (sessão + atalhos) */
+
+.statusbar {
+  background: var(--blue-deep);
+  color: var(--cyan);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 9px 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  flex-shrink: 0;
+}
+
+.statusbar .item {
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+
+.statusbar .item .k {
+  color: #7f93c9;
+}
+
+.statusbar .item .v {
+  color: var(--cyan);
+  font-weight: 500;
+}
+
+.statusbar .shortcuts {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  color: #9fb2de;
+}
+
+.statusbar .shortcuts .key {
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  padding: 1px 5px;
+  margin-right: 4px;
+  font-weight: 600;
+}
+
+/* ---- confirmação pós-venda (sem valores) ---- */
+
+.venda-confirmacao {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.venda-confirmacao h1 {
+  font-size: 20px;
+  color: var(--blue-primary);
+}
+
+.venda-confirmacao-acoes {
+  display: flex;
+  gap: 10px;
+}
+
+.venda-confirmacao-escolha {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  align-items: center;
+}
+
+/* ---- modais (busca de produto/cliente) ---- */
+
+.modal-fundo {
+  position: fixed;
+  inset: 0;
+  background: rgba(10, 28, 77, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.modal-caixa {
+  width: 320px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 22px;
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: 0 24px 48px -16px rgba(10, 28, 77, 0.4);
+}
+
+.modal-caixa h2 {
+  color: var(--blue-primary);
+  font-size: 17px;
+}
+
+.modal-acoes {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.modal-acoes button:first-child {
+  background: var(--surface);
+  color: var(--ink-soft);
+  border-color: var(--border);
+}
+
+.modal-acoes button:first-child:hover {
+  background: var(--surface-tint);
+}
+
+.seletor-modal {
+  width: 420px;
+}
+
+.seletor-modal-lista {
+  max-height: 320px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.seletor-modal-lista li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-family: var(--font-mono);
+  font-size: 13.5px;
+}
+
+.seletor-modal-lista li {
+  cursor: pointer;
+}
+
+.seletor-modal-lista li.ativo {
+  background: var(--surface-tint);
+  box-shadow: inset 2px 0 0 var(--blue-primary);
+}
+
+.seletor-modal-numero {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: var(--blue-primary);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.seletor-modal-sublabel {
+  margin-left: auto;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+
+.seletor-modal-vazio {
+  color: var(--ink-soft);
+  padding: 8px 10px;
+}
+
+.seletor-modal-aviso {
+  background: var(--surface-tint);
+  border: 1px solid var(--border);
+  padding: 8px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+.seletor-modal-rodape {
+  font-size: 11.5px;
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+}
+
+/* =========================================================================
+   RESPONSIVO — celular (abaixo de 640px)
+   ========================================================================= */
+
+@media (max-width: 640px) {
+  .terminal-page {
+    padding: 8px;
+  }
+
+  /* topbar sai do position:fixed (que ia sobrepor o título "VENDA" numa
+     tela estreita) e vira uma barra normal, ancorada no topo da página -
+     já é a primeira coisa renderizada em CaixaApp, então nada muda na
+     ordem visual, só o comportamento. */
+  .caixa-topbar {
+    position: static;
+    justify-content: flex-end;
+    width: 100%;
+    padding: 8px 12px;
+    background: var(--blue-deep);
+  }
+
+  /* as duas colunas da venda empilham: carrinho em cima, cliente +
+     finalizar embaixo (mesma ordem de leitura de cima pra baixo) */
+  .terminal-content {
+    flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .col-left {
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+    padding: 14px 16px;
+  }
+
+  .col-right {
+    width: 100%;
+    padding: 14px 16px;
+  }
+
+  .venda-confirmacao-acoes {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .cart-qty-input {
+    width: 3.6em;
+  }
+
+  /* nome do produto em cima, quantidade embaixo, botões lado a lado
+     ocupando a largura toda — em vez de tudo espremido numa linha só */
+  .venda-peso {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .venda-peso-acoes button {
+    flex: 1;
+  }
+}

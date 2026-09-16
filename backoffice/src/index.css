@@ -7,16 +7,25 @@
 @import '@fontsource/ibm-plex-mono/600.css';
 @import '@fontsource/ibm-plex-mono/700.css';
 
+*,
+*::before,
+*::after {
+  /* faltava esse reset universal — sem ele, qualquer elemento com
+     width:100% + padding/border (inputs, botões) fica mais largo que o
+     container e gera rolagem horizontal na página inteira. */
+  box-sizing: border-box;
+}
+
 :root {
-  --blue-deep: #0a1c4d;
-  --blue-primary: #1c3fa8;
-  --blue-bright: #2a52d6;
+  --blue-deep: #1a1a1a;
+  --blue-primary: #2b2b2e;
+  --blue-bright: #48484d;
   --surface: #ffffff;
-  --surface-tint: #eef2fb;
-  --surface-mute: #dbe4f7;
-  --ink: #10193a;
-  --ink-soft: #4a5578;
-  --border: #c3d0ec;
+  --surface-tint: #f2f2f3;
+  --surface-mute: #e2e2e4;
+  --ink: #1c1c1e;
+  --ink-soft: #5a5a5e;
+  --border: #d4d4d6;
   --gold: #e8a600;
   --cyan: #5fe0e8;
   --green: #2fae63;
@@ -51,6 +60,9 @@
 body {
   margin: 0;
   background: var(--bg);
+  /* rede de segurança: a página em si nunca deve rolar na horizontal —
+     só containers específicos (.tabela-scroll) fazem isso por conta própria */
+  overflow-x: hidden;
 }
 
 h1,

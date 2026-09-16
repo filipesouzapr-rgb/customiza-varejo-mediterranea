@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import type { FiadoPagamento, SaldoFiadoCliente, VendaResumo } from '../types'
+import { PedidoAdminModal } from '../components/PedidoAdminModal'
+import type { FiadoPagamento, PedidoPendente, SaldoFiadoCliente, VendaResumo } from '../types'
 
 function moeda(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -21,7 +22,18 @@ function trintaDiasAtras() {
   return dataISO(d)
 }
 
+interface PedidoPendenteRaw {
+  id: string
+  total: number
+  finalizada_em: string
+  clientes: { nome: string } | null
+}
+
 export function FiadoPage() {
+  const [pendentes, setPendentes] = useState<PedidoPendente[]>([])
+  const [carregandoPendentes, setCarregandoPendentes] = useState(true)
+  const [pedidoAberto, setPedidoAberto] = useState<string | null>(null)
+
   const [clientes, setClientes] = useState<SaldoFiadoCliente[]>([])
   const [carregandoClientes, setCarregandoClientes] = useState(true)
   const [clienteSelecionado, setClienteSelecionado] = useState<SaldoFiadoCliente | null>(null)
@@ -37,6 +49,28 @@ export function FiadoPage() {
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
 
+  async function carregarPendentes() {
+    setCarregandoPendentes(true)
+    const { data, error } = await supabase
+      .from('vendas')
+      .select('id, total, finalizada_em, clientes(nome)')
+      .eq('status', 'finalizada')
+      .is('conciliado_em', null)
+      .order('finalizada_em', { ascending: false })
+
+    if (error) setErro(error.message)
+    else
+      setPendentes(
+        ((data ?? []) as unknown as PedidoPendenteRaw[]).map((v) => ({
+          id: v.id,
+          total: v.total,
+          finalizada_em: v.finalizada_em,
+          cliente_nome: v.clientes?.nome ?? '—',
+        })),
+      )
+    setCarregandoPendentes(false)
+  }
+
   async function carregarClientes() {
     setCarregandoClientes(true)
     const { data, error } = await supabase
@@ -51,6 +85,7 @@ export function FiadoPage() {
   }
 
   useEffect(() => {
+    carregarPendentes()
     carregarClientes()
   }, [])
 
@@ -65,7 +100,7 @@ export function FiadoPage() {
       await Promise.all([
         supabase
           .from('vendas')
-          .select('id, total, finalizada_em')
+          .select('id, total, finalizada_em, conciliado_em')
           .eq('cliente_id', cliente.cliente_id)
           .eq('status', 'finalizada')
           .gte('finalizada_em', inicio)
@@ -129,37 +164,72 @@ export function FiadoPage() {
 
   return (
     <div className="fiado-page">
+      <section className="fiado-pendentes">
+        <h2>Pedidos pendentes de conciliação</h2>
+        {carregandoPendentes ? (
+          <p>Carregando...</p>
+        ) : (
+          <div className="tabela-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Cliente</th>
+                  <th>Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {pendentes.map((p) => (
+                  <tr key={p.id} className="linha-clicavel" onClick={() => setPedidoAberto(p.id)}>
+                    <td>{new Date(p.finalizada_em).toLocaleString('pt-BR')}</td>
+                    <td>{p.cliente_nome}</td>
+                    <td>{moeda(p.total)}</td>
+                  </tr>
+                ))}
+                {pendentes.length === 0 && (
+                  <tr>
+                    <td colSpan={3}>Nenhum pedido pendente de conciliação.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
+
       <section className="fiado-lista">
         <h2>Clientes com fiado em aberto</h2>
         {erro && <p className="erro">{erro}</p>}
         {carregandoClientes ? (
           <p>Carregando...</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Cliente</th>
-                <th>Saldo</th>
-              </tr>
-            </thead>
-            <tbody>
-              {clientes.map((c) => (
-                <tr
-                  key={c.cliente_id}
-                  className={clienteSelecionado?.cliente_id === c.cliente_id ? 'selecionado' : ''}
-                  onClick={() => carregarDetalhe(c)}
-                >
-                  <td>{c.nome}</td>
-                  <td>{moeda(c.saldo_em_aberto)}</td>
-                </tr>
-              ))}
-              {clientes.length === 0 && (
+          <div className="tabela-scroll">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={2}>Nenhum cliente com saldo em aberto.</td>
+                  <th>Cliente</th>
+                  <th>Saldo</th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {clientes.map((c) => (
+                  <tr
+                    key={c.cliente_id}
+                    className={clienteSelecionado?.cliente_id === c.cliente_id ? 'selecionado' : ''}
+                    onClick={() => carregarDetalhe(c)}
+                  >
+                    <td>{c.nome}</td>
+                    <td>{moeda(c.saldo_em_aberto)}</td>
+                  </tr>
+                ))}
+                {clientes.length === 0 && (
+                  <tr>
+                    <td colSpan={2}>Nenhum cliente com saldo em aberto.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
 
@@ -184,52 +254,64 @@ export function FiadoPage() {
           ) : (
             <>
               <h3>Compras no período</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Total</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {vendas.map((v) => (
-                    <tr key={v.id}>
-                      <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
-                      <td>{moeda(v.total)}</td>
-                    </tr>
-                  ))}
-                  {vendas.length === 0 && (
+              <div className="tabela-scroll">
+                <table>
+                  <thead>
                     <tr>
-                      <td colSpan={2}>Nenhuma compra no período.</td>
+                      <th>Data</th>
+                      <th>Total</th>
+                      <th>Status</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {vendas.map((v) => (
+                      <tr key={v.id} className="linha-clicavel" onClick={() => setPedidoAberto(v.id)}>
+                        <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
+                        <td>{moeda(v.total)}</td>
+                        <td>
+                          {v.conciliado_em ? (
+                            <span className="badge badge-conciliado">Conciliado</span>
+                          ) : (
+                            <span className="badge badge-pendente">Pendente</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                    {vendas.length === 0 && (
+                      <tr>
+                        <td colSpan={3}>Nenhuma compra no período.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
 
               <h3>Pagamentos no período</h3>
-              <table>
-                <thead>
-                  <tr>
-                    <th>Data</th>
-                    <th>Valor</th>
-                    <th>Obs.</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {pagamentos.map((p) => (
-                    <tr key={p.id}>
-                      <td>{new Date(p.pago_em).toLocaleString('pt-BR')}</td>
-                      <td>{moeda(p.valor)}</td>
-                      <td>{p.observacoes ?? '—'}</td>
-                    </tr>
-                  ))}
-                  {pagamentos.length === 0 && (
+              <div className="tabela-scroll">
+                <table>
+                  <thead>
                     <tr>
-                      <td colSpan={3}>Nenhum pagamento no período.</td>
+                      <th>Data</th>
+                      <th>Valor</th>
+                      <th>Obs.</th>
                     </tr>
-                  )}
-                </tbody>
-              </table>
+                  </thead>
+                  <tbody>
+                    {pagamentos.map((p) => (
+                      <tr key={p.id}>
+                        <td>{new Date(p.pago_em).toLocaleString('pt-BR')}</td>
+                        <td>{moeda(p.valor)}</td>
+                        <td>{p.observacoes ?? '—'}</td>
+                      </tr>
+                    ))}
+                    {pagamentos.length === 0 && (
+                      <tr>
+                        <td colSpan={3}>Nenhum pagamento no período.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
 
@@ -262,6 +344,18 @@ export function FiadoPage() {
             </button>
           </form>
         </section>
+      )}
+
+      {pedidoAberto && (
+        <PedidoAdminModal
+          vendaId={pedidoAberto}
+          onFechar={() => setPedidoAberto(null)}
+          onAtualizado={() => {
+            carregarPendentes()
+            carregarClientes()
+            if (clienteSelecionado) carregarDetalhe(clienteSelecionado)
+          }}
+        />
       )}
     </div>
   )

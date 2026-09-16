@@ -23,11 +23,15 @@ create table empresas (
 );
 
 -- Este projeto Supabase tem "Automatically expose new tables" desligado, o
--- que so acontece quando tabelas/sequences sao criadas via SQL puro (nao
--- pelo Table Editor) - GRANT nao vem de graca, mesmo que a tabela tenha RLS
--- habilitado. Sem isso o PostgREST rejeita qualquer acesso antes mesmo de
--- chegar a avaliar as policies. Toda migration daqui pra frente que criar
--- tabela/sequence nova precisa do mesmo par de GRANT abaixo.
+-- que so acontece quando tabelas/sequences/views sao criadas via SQL puro
+-- (nao pelo Table Editor) - GRANT nao vem de graca, mesmo com RLS habilitado
+-- (RLS so entra em jogo DEPOIS do GRANT liberar o acesso; sem o GRANT o
+-- PostgREST rejeita antes mesmo de avaliar as policies). Isso vale pra
+-- VIEWS tambem, nao so tabela/sequence - ver o grant da
+-- fiado_saldo_por_cliente mais abaixo, que faltou numa primeira leva desta
+-- migration e so foi notado com o erro "permission denied for view
+-- fiado_saldo_por_cliente" em producao. Toda migration daqui pra frente que
+-- criar tabela/sequence/view nova precisa do mesmo tipo de GRANT.
 grant select, insert, update, delete on empresas to authenticated;
 
 -- A sequence de codigo_interno (criada na 0002) precisou do mesmo ajuste
@@ -388,3 +392,8 @@ from clientes c
 left join vendas v on v.cliente_id = c.id and v.status = 'finalizada' and v.empresa_id = c.empresa_id
 left join venda_pagamentos vp on vp.venda_id = v.id and vp.forma = 'fiado'
 group by c.id, c.empresa_id, c.nome;
+
+-- Views tambem precisam de GRANT explicito neste projeto (ver comentario no
+-- topo do arquivo) - sem isso o backoffice recebe "permission denied for
+-- view fiado_saldo_por_cliente" ao carregar o dashboard/fiado.
+grant select on fiado_saldo_por_cliente to authenticated;

@@ -1,56 +1,48 @@
-# Customiza Varejo — Template
+# Customiza Varejo
 
-Base do sistema de PDV (ponto de venda) da Customiza Varejo. Este repositório é o
-**template**: não roda para nenhum cliente específico, serve só de ponto de
-partida limpo pra criar o projeto de um cliente novo (ex.: `padaria bdi`).
+Sistema de PDV (ponto de venda) + backoffice da Customiza Varejo, rodando sobre
+o projeto Supabase multi-tenant `customiza-varejo-core` — várias empresas
+(tenants) isoladas por `empresa_id`/RLS no mesmo banco.
 
 ## Estrutura
 
-- [`pdv/`](pdv) — app desktop (Electron + React + TypeScript) usado no caixa.
-- [`backoffice/`](backoffice) — app web (Vite + React + TypeScript) para cadastro
-  de produtos, dashboard, fiado e demais telas de gestão.
-- [`supabase/migrations/`](supabase/migrations) — schema do banco, na ordem em
-  que deve ser aplicado num projeto Supabase novo.
+- [`backoffice/`](backoffice) — app web único (Vite + React + TypeScript,
+  sem Electron) que hospeda tanto o caixa (`/caixa`) quanto a gestão
+  (`/dashboard`, `/produtos`, `/fiado`). Acesso por papel do operador: quem
+  tem papel `operador` só acessa `/caixa`; `supervisor`/`dono` acessam
+  `/caixa` e as telas de gestão.
+- [`supabase/migrations/`](supabase/migrations) — schema do banco
+  multi-tenant, na ordem em que deve ser aplicado.
+- [`supabase/roteiro_teste_multitenant.sql`](supabase/roteiro_teste_multitenant.sql)
+  — roteiro manual (SQL Editor) pra validar isolamento por empresa via RLS;
+  não é uma migration.
 
-## Como criar o projeto de um cliente novo a partir daqui
+## Como cadastrar um cliente novo (empresa) neste backend
 
-1. Copie esta pasta inteira para `Customiza Varejo/<nome-do-cliente>` (não
-   precisa copiar `node_modules` nem `.git` — dá pra rodar `npm install` e
-   `git init` de novo na pasta nova).
-2. Na pasta nova: `git init` (histórico próprio, independente deste template).
-3. Crie um **projeto Supabase novo**, exclusivo desse cliente. Pegue a Project
-   URL e a anon key.
-4. Rode as migrations de `supabase/migrations/` no SQL Editor do projeto novo,
-   na ordem numérica.
-5. Copie `pdv/.env.example` → `pdv/.env` e `backoffice/.env.example` →
-   `backoffice/.env`, preenchendo com a URL/anon key do projeto novo e o nome
-   do estabelecimento (`RENDERER_VITE_NOME_ESTABELECIMENTO` /
-   `VITE_NOME_ESTABELECIMENTO`).
-6. Crie o usuário dono em Authentication → Users no painel do Supabase, e
-   depois rode no SQL Editor:
+Todos os clientes rodam sobre o **mesmo** projeto Supabase multi-tenant
+(`customiza-varejo-core`) — cada um é isolado por RLS via `empresa_id`, não
+por projeto Supabase separado. Pra dar de alta um cliente novo:
+
+1. No SQL Editor do `customiza-varejo-core`, cadastre a empresa:
    ```sql
-   insert into operadores (id, nome, papel)
-   select id, 'Nome do dono', 'dono' from auth.users where email = 'email@do-dono.com';
+   insert into empresas (nome, slug) values ('Nome do Cliente', 'nome-do-cliente');
    ```
-7. `npm install` na pasta do cliente, depois `npm run dev --workspace=pdv` /
-   `--workspace=backoffice` pra testar.
-
-## Mantendo o template atualizado
-
-Melhorias genéricas (que valem pra qualquer cliente — correção de bug, novo
-atalho de teclado, ajuste visual) feitas num projeto de cliente devem ser
-trazidas de volta pra cá, pra que o próximo cliente já nasça com elas. O jeito
-mais simples: com o projeto do cliente como remoto local, `git fetch`/`merge`
-aqui (funciona bem quando o template não teve mudanças próprias divergentes).
-Coisas específicas de um cliente (nome, dados, customizações só daquele
-negócio) **não** devem voltar pra cá.
+2. Crie o usuário dono em Authentication → Users no painel do Supabase, e
+   depois rode no SQL Editor (usando o id da empresa do passo 1):
+   ```sql
+   insert into operadores (id, empresa_id, nome, papel)
+   select id, '<empresa_id>', 'Nome do dono', 'dono' from auth.users where email = 'email@do-dono.com';
+   ```
+3. Cada cliente tem seu próprio deploy do app web (este repositório é um
+   exemplo — a Mediterrânea), com `.env` apontando pra `customiza-varejo-core`
+   (URL/anon key são as mesmas pra todos os clientes) e
+   `VITE_NOME_ESTABELECIMENTO` com o nome daquele cliente.
 
 ## Desenvolvimento
 
 ```bash
 npm install
-npm run dev --workspace=pdv          # PDV (Electron)
-npm run dev --workspace=backoffice   # Backoffice (web)
+npm run dev --workspace=backoffice   # app web único (caixa + gestão)
 ```
 
 ## Decisões de arquitetura

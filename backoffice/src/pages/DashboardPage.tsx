@@ -7,7 +7,7 @@ const rotuloForma: Record<string, string> = {
   cartao_debito: 'Cartão débito',
   cartao_credito: 'Cartão crédito',
   pix: 'Pix',
-  fiado: 'Outros',
+  fiado: 'Fiado',
 }
 
 function moeda(valor: number) {
@@ -18,8 +18,10 @@ export function DashboardPage() {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [totalHoje, setTotalHoje] = useState(0)
-  const [porForma, setPorForma] = useState<Record<string, number>>({})
   const [numVendasHoje, setNumVendasHoje] = useState(0)
+  const [pendenteTotal, setPendenteTotal] = useState(0)
+  const [pendenteCount, setPendenteCount] = useState(0)
+  const [porForma, setPorForma] = useState<Record<string, number>>({})
   const [fiadoTotal, setFiadoTotal] = useState(0)
   const [fiadoClientes, setFiadoClientes] = useState(0)
   const [topFiado, setTopFiado] = useState<SaldoFiadoCliente[]>([])
@@ -32,7 +34,7 @@ export function DashboardPage() {
       const inicioHoje = new Date()
       inicioHoje.setHours(0, 0, 0, 0)
 
-      const { data: vendas, error: errVendas } = await supabase
+      const { data: vendasHoje, error: errVendas } = await supabase
         .from('vendas')
         .select('id, total')
         .eq('status', 'finalizada')
@@ -44,27 +46,35 @@ export function DashboardPage() {
         return
       }
 
-      const vendaIds = (vendas ?? []).map((v) => v.id)
-      setNumVendasHoje(vendaIds.length)
-      setTotalHoje((vendas ?? []).reduce((soma, v) => soma + Number(v.total), 0))
+      setNumVendasHoje((vendasHoje ?? []).length)
+      setTotalHoje((vendasHoje ?? []).reduce((soma, v) => soma + Number(v.total), 0))
 
-      if (vendaIds.length > 0) {
-        const { data: pagamentos, error: errPag } = await supabase
-          .from('venda_pagamentos')
-          .select('forma, valor')
-          .in('venda_id', vendaIds)
+      const { data: pendentes, error: errPendentes } = await supabase
+        .from('vendas')
+        .select('total')
+        .eq('status', 'finalizada')
+        .is('conciliado_em', null)
 
-        if (errPag) {
-          setErro(errPag.message)
-        } else {
-          const soma: Record<string, number> = {}
-          for (const p of pagamentos ?? []) {
-            soma[p.forma] = (soma[p.forma] ?? 0) + Number(p.valor)
-          }
-          setPorForma(soma)
-        }
+      if (errPendentes) {
+        setErro(errPendentes.message)
       } else {
-        setPorForma({})
+        setPendenteCount((pendentes ?? []).length)
+        setPendenteTotal((pendentes ?? []).reduce((soma, v) => soma + Number(v.total), 0))
+      }
+
+      const { data: pagamentosHoje, error: errPag } = await supabase
+        .from('venda_pagamentos')
+        .select('forma, valor')
+        .gte('criado_em', inicioHoje.toISOString())
+
+      if (errPag) {
+        setErro(errPag.message)
+      } else {
+        const soma: Record<string, number> = {}
+        for (const p of pagamentosHoje ?? []) {
+          soma[p.forma] = (soma[p.forma] ?? 0) + Number(p.valor)
+        }
+        setPorForma(soma)
       }
 
       const { data: fiado, error: errFiado } = await supabase
@@ -101,6 +111,11 @@ export function DashboardPage() {
           <span className="dashboard-card-sub">{numVendasHoje} venda(s)</span>
         </div>
         <div className="dashboard-card">
+          <span className="dashboard-card-titulo">Pendente de conciliação</span>
+          <span className="dashboard-card-valor">{moeda(pendenteTotal)}</span>
+          <span className="dashboard-card-sub">{pendenteCount} pedido(s)</span>
+        </div>
+        <div className="dashboard-card">
           <span className="dashboard-card-titulo">Fiado em aberto</span>
           <span className="dashboard-card-valor">{moeda(fiadoTotal)}</span>
           <span className="dashboard-card-sub">{fiadoClientes} cliente(s)</span>
@@ -108,53 +123,57 @@ export function DashboardPage() {
       </div>
 
       <section>
-        <h2>Vendas de hoje por forma de pagamento</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Forma</th>
-              <th>Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {Object.entries(porForma).map(([forma, valor]) => (
-              <tr key={forma}>
-                <td>{rotuloForma[forma] ?? forma}</td>
-                <td>{moeda(valor)}</td>
-              </tr>
-            ))}
-            {Object.keys(porForma).length === 0 && (
+        <h2>Conciliado hoje por forma de pagamento</h2>
+        <div className="tabela-scroll">
+          <table>
+            <thead>
               <tr>
-                <td colSpan={2}>Nenhuma venda hoje ainda.</td>
+                <th>Forma</th>
+                <th>Total</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {Object.entries(porForma).map(([forma, valor]) => (
+                <tr key={forma}>
+                  <td>{rotuloForma[forma] ?? forma}</td>
+                  <td>{moeda(valor)}</td>
+                </tr>
+              ))}
+              {Object.keys(porForma).length === 0 && (
+                <tr>
+                  <td colSpan={2}>Nenhuma conciliação hoje ainda.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section>
         <h2>Maiores saldos de fiado</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Cliente</th>
-              <th>Saldo</th>
-            </tr>
-          </thead>
-          <tbody>
-            {topFiado.map((c) => (
-              <tr key={c.cliente_id}>
-                <td>{c.nome}</td>
-                <td>{moeda(c.saldo_em_aberto)}</td>
-              </tr>
-            ))}
-            {topFiado.length === 0 && (
+        <div className="tabela-scroll">
+          <table>
+            <thead>
               <tr>
-                <td colSpan={2}>Nenhum cliente com saldo em aberto.</td>
+                <th>Cliente</th>
+                <th>Saldo</th>
               </tr>
-            )}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {topFiado.map((c) => (
+                <tr key={c.cliente_id}>
+                  <td>{c.nome}</td>
+                  <td>{moeda(c.saldo_em_aberto)}</td>
+                </tr>
+              ))}
+              {topFiado.length === 0 && (
+                <tr>
+                  <td colSpan={2}>Nenhum cliente com saldo em aberto.</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </section>
     </div>
   )

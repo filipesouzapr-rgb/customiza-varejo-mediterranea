@@ -165,48 +165,50 @@ export function ProdutosPage() {
         {carregando ? (
           <p>Carregando...</p>
         ) : (
-          <table>
-            <thead>
-              <tr>
-                <th>Nome</th>
-                <th>Código interno</th>
-                <th>Cód. barras</th>
-                <th>Unidade</th>
-                <th>Preço</th>
-                <th>Estoque</th>
-                <th>Ativo</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {produtos.map((produto) => (
-                <tr key={produto.id} className={produto.ativo ? '' : 'inativo'}>
-                  <td>{produto.nome}</td>
-                  <td>{produto.codigo_interno}</td>
-                  <td>{produto.codigo_barras ?? '—'}</td>
-                  <td>{produto.unidade === 'kg' ? 'kg' : 'un'}</td>
-                  <td>
-                    {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                  </td>
-                  <td>{produto.estoque_atual}</td>
-                  <td>{produto.ativo ? 'Sim' : 'Não'}</td>
-                  <td className="produtos-lista-acoes">
-                    <button type="button" onClick={() => editar(produto)}>
-                      Editar
-                    </button>
-                    <button type="button" onClick={() => alternarAtivo(produto)}>
-                      {produto.ativo ? 'Desativar' : 'Reativar'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
-              {produtos.length === 0 && (
+          <div className="tabela-scroll">
+            <table>
+              <thead>
                 <tr>
-                  <td colSpan={8}>Nenhum produto cadastrado ainda.</td>
+                  <th>Nome</th>
+                  <th>Código interno</th>
+                  <th>Cód. barras</th>
+                  <th>Unidade</th>
+                  <th>Preço</th>
+                  <th>Estoque</th>
+                  <th>Ativo</th>
+                  <th></th>
                 </tr>
-              )}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {produtos.map((produto) => (
+                  <tr key={produto.id} className={produto.ativo ? '' : 'inativo'}>
+                    <td>{produto.nome}</td>
+                    <td>{produto.codigo_interno}</td>
+                    <td>{produto.codigo_barras ?? '—'}</td>
+                    <td>{produto.unidade === 'kg' ? 'kg' : 'un'}</td>
+                    <td>
+                      {produto.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                    </td>
+                    <td>{produto.estoque_atual}</td>
+                    <td>{produto.ativo ? 'Sim' : 'Não'}</td>
+                    <td className="produtos-lista-acoes">
+                      <button type="button" onClick={() => editar(produto)}>
+                        Editar
+                      </button>
+                      <button type="button" onClick={() => alternarAtivo(produto)}>
+                        {produto.ativo ? 'Desativar' : 'Reativar'}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {produtos.length === 0 && (
+                  <tr>
+                    <td colSpan={8}>Nenhum produto cadastrado ainda.</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
         )}
       </section>
     </div>
