@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
-import type { Session } from '@supabase/auth-js'
-import { neon } from './neon'
+import type { Session } from '@supabase/supabase-js'
+import { supabase } from './supabase'
 import type { Operador } from '../types'
 
 export function useOperador(session: Session | null) {
@@ -15,9 +15,9 @@ export function useOperador(session: Session | null) {
     }
 
     setLoading(true)
-    neon
+    supabase
       .from('operadores')
-      .select('id, nome, papel, ativo')
+      .select('id, nome, papel, ativo, empresa_id')
       .eq('id', session.user.id)
       .single()
       .then(({ data, error }) => {

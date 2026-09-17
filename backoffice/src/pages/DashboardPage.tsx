@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { neon } from '../lib/neon'
+import { supabase } from '../lib/supabase'
 import type { SaldoFiadoCliente } from '../types'
 
 const rotuloForma: Record<string, string> = {
@@ -34,7 +34,7 @@ export function DashboardPage() {
       const inicioHoje = new Date()
       inicioHoje.setHours(0, 0, 0, 0)
 
-      const { data: vendasHoje, error: errVendas } = await neon
+      const { data: vendasHoje, error: errVendas } = await supabase
         .from('vendas')
         .select('id, total')
         .eq('status', 'finalizada')
@@ -49,7 +49,7 @@ export function DashboardPage() {
       setNumVendasHoje((vendasHoje ?? []).length)
       setTotalHoje((vendasHoje ?? []).reduce((soma, v) => soma + Number(v.total), 0))
 
-      const { data: pendentes, error: errPendentes } = await neon
+      const { data: pendentes, error: errPendentes } = await supabase
         .from('vendas')
         .select('total')
         .eq('status', 'finalizada')
@@ -62,7 +62,7 @@ export function DashboardPage() {
         setPendenteTotal((pendentes ?? []).reduce((soma, v) => soma + Number(v.total), 0))
       }
 
-      const { data: pagamentosHoje, error: errPag } = await neon
+      const { data: pagamentosHoje, error: errPag } = await supabase
         .from('venda_pagamentos')
         .select('forma, valor')
         .gte('criado_em', inicioHoje.toISOString())
@@ -77,7 +77,7 @@ export function DashboardPage() {
         setPorForma(soma)
       }
 
-      const { data: fiado, error: errFiado } = await neon
+      const { data: fiado, error: errFiado } = await supabase
         .from('fiado_saldo_por_cliente')
         .select('*')
         .neq('saldo_em_aberto', 0)

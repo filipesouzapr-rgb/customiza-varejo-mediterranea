@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { neon } from '../lib/neon'
+import { supabase } from '../lib/supabase'
 import { SeletorModal } from './caixa/SeletorModal'
 import type { FormaPagamento, Produto, UnidadeProduto } from '../types'
 
@@ -75,16 +75,16 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
 
     const [{ data: venda, error: errVenda }, { data: itensData, error: errItens }, { data: produtosData }] =
       await Promise.all([
-        neon
+        supabase
           .from('vendas')
           .select('id, status, conciliado_em, desconto, total, clientes(nome)')
           .eq('id', vendaId)
           .single(),
-        neon
+        supabase
           .from('venda_itens')
           .select('produto_id, quantidade, preco_unitario, produtos(nome, unidade)')
           .eq('venda_id', vendaId),
-        neon.from('produtos').select('*').eq('ativo', true),
+        supabase.from('produtos').select('*').eq('ativo', true),
       ])
 
     if (errVenda || !venda) {
@@ -116,7 +116,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     )
 
     if (vendaDetalhe.conciliado_em) {
-      const { data: pagamentos } = await neon
+      const { data: pagamentos } = await supabase
         .from('venda_pagamentos')
         .select('forma, valor')
         .eq('venda_id', vendaId)
@@ -171,7 +171,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     setErro(null)
     setSalvando(true)
 
-    const { error } = await neon.rpc('editar_venda_admin', {
+    const { error } = await supabase.rpc('editar_venda_admin', {
       p_venda_id: vendaId,
       p_itens: itens.map((i) => ({
         produto_id: i.produto_id,
@@ -217,7 +217,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     setErro(null)
     setSalvando(true)
 
-    const { error } = await neon.rpc('conciliar_venda', {
+    const { error } = await supabase.rpc('conciliar_venda', {
       p_venda_id: vendaId,
       p_pagamentos: pagamentosForm.map((p) => ({ forma: p.forma, valor: Number(p.valor) || 0 })),
     })
@@ -239,7 +239,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     setErro(null)
     setSalvando(true)
 
-    const { error } = await neon.rpc('cancelar_venda', { p_venda_id: vendaId })
+    const { error } = await supabase.rpc('cancelar_venda', { p_venda_id: vendaId })
 
     setSalvando(false)
 

@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { sair } from '../../lib/neon'
+import { supabase } from '../../lib/supabase'
 import { TerminalFrame } from '../../components/caixa/TerminalFrame'
 import { VendaPage } from './VendaPage'
 import type { Operador } from '../../types'
@@ -13,7 +13,7 @@ export function CaixaApp({ operador }: Props) {
     <>
       <div className="caixa-topbar">
         {operador.papel !== 'operador' && <Link to="/dashboard">Painel admin</Link>}
-        <button type="button" onClick={() => sair()}>
+        <button type="button" onClick={() => supabase.auth.signOut()}>
           Sair
         </button>
       </div>

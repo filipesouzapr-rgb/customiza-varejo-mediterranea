@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { neon } from '../../lib/neon'
+import { supabase } from '../../lib/supabase'
 import type {
   ContaPagarRegra,
   Fornecedor,
@@ -69,7 +69,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
     setCarregando(true)
     setErro(null)
 
-    const { data, error } = await neon.from('contas_pagar').select('*').eq('id', contaId).single()
+    const { data, error } = await supabase.from('contas_pagar').select('*').eq('id', contaId).single()
 
     if (error || !data) {
       setErro(error?.message ?? 'Conta não encontrada.')
@@ -87,7 +87,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
     setDataVencimento(c.data_vencimento)
 
     if (c.regra_id) {
-      const { data: regraData } = await neon
+      const { data: regraData } = await supabase
         .from('contas_pagar_regras')
         .select('*')
         .eq('id', c.regra_id)
@@ -110,7 +110,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
     setSalvando(true)
 
     if (aplicarRegraToda && regra) {
-      const { error } = await neon.rpc('editar_regra_contas_pagar', {
+      const { error } = await supabase.rpc('editar_regra_contas_pagar', {
         p_regra_id: regra.id,
         p_fornecedor_id: fornecedorId || null,
         p_grupo_id: grupoId,
@@ -129,7 +129,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
         return
       }
     } else {
-      const { error } = await neon
+      const { error } = await supabase
         .from('contas_pagar')
         .update({
           fornecedor_id: fornecedorId || null,
@@ -155,7 +155,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
     setErro(null)
     setSalvando(true)
 
-    const { error } = await neon
+    const { error } = await supabase
       .from('contas_pagar')
       .update({ status: 'conciliado', data_pagamento: dataPagamento, forma_pagamento: formaPagamento })
       .eq('id', contaId)

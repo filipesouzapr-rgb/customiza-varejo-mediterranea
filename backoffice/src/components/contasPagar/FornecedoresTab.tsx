@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { neon } from '../../lib/neon'
+import { supabase } from '../../lib/supabase'
 import type { Fornecedor } from '../../types'
 
 const formVazio = { id: null as string | null, nome: '', cpf_cnpj: '', telefone: '' }
@@ -14,7 +14,7 @@ export function FornecedoresTab() {
 
   async function carregar() {
     setCarregando(true)
-    const { data, error } = await neon.from('fornecedores').select('*').order('nome')
+    const { data, error } = await supabase.from('fornecedores').select('*').order('nome')
     if (error) setErro(error.message)
     else setFornecedores((data as Fornecedor[]) ?? [])
     setCarregando(false)
@@ -29,7 +29,7 @@ export function FornecedoresTab() {
   }
 
   async function alternarAtivo(f: Fornecedor) {
-    const { error } = await neon.from('fornecedores').update({ ativo: !f.ativo }).eq('id', f.id)
+    const { error } = await supabase.from('fornecedores').update({ ativo: !f.ativo }).eq('id', f.id)
     if (error) setErro(error.message)
     else carregar()
   }
@@ -46,8 +46,8 @@ export function FornecedoresTab() {
     }
 
     const { error } = form.id
-      ? await neon.from('fornecedores').update(payload).eq('id', form.id)
-      : await neon.from('fornecedores').insert(payload)
+      ? await supabase.from('fornecedores').update(payload).eq('id', form.id)
+      : await supabase.from('fornecedores').insert(payload)
 
     setSalvando(false)
     if (error) {

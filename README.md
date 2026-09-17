@@ -1,65 +1,49 @@
-# Mediterrânea — PDV + Backoffice
+# Customiza Varejo
 
-Sistema de PDV (ponto de venda) + backoffice da Mediterrânea, rodando sobre um
-projeto **Neon** (Postgres) próprio — banco single-tenant, sem `empresa_id`/RLS
-multi-tenant (este projeto já rodou sobre um Supabase compartilhado entre
-clientes; migrado pro Neon com banco dedicado, seguindo o mesmo padrão do
-projeto irmão `apreciarcafe`).
-
-Autenticação via **Neon Auth** (Managed Better Auth) + **Neon Data API**
-(camada REST estilo PostgREST, com RLS de verdade por trás).
+Sistema de PDV (ponto de venda) + backoffice da Customiza Varejo, rodando sobre
+o projeto Supabase multi-tenant `customiza-varejo-core` — várias empresas
+(tenants) isoladas por `empresa_id`/RLS no mesmo banco.
 
 ## Estrutura
 
 - [`backoffice/`](backoffice) — app web único (Vite + React + TypeScript,
-  workspace npm) que hospeda tanto o caixa (`/caixa`) quanto a gestão
-  (`/dashboard`, `/produtos`, `/clientes`, `/fiado`, `/contas-pagar`). Acesso
-  por papel do operador: quem tem papel `operador` só acessa `/caixa`;
-  `supervisor`/`dono` acessam `/caixa` e as telas de gestão.
-- [`neon/migrations/`](neon/migrations) — schema do banco Neon, na ordem em
-  que deve ser aplicado (`neon psql main --project-id <id> --role-name
-  neondb_owner -- -f neon/migrations/000X_arquivo.sql`).
-- [`neon.ts`](neon.ts) — declara os serviços Neon do projeto (`auth` +
-  `dataApi`); aplicar com `neon deploy --project-id <id> --branch main`.
-- [`supabase/`](supabase) — **histórico/legado**: migrations da fase em que
-  este projeto ainda rodava sobre Supabase (multi-tenant, compartilhado com
-  outros clientes). Não é mais usado nem aplicado — mantido só como
-  referência de como o schema evoluiu antes da migração pro Neon.
+  sem Electron) que hospeda tanto o caixa (`/caixa`) quanto a gestão
+  (`/dashboard`, `/produtos`, `/fiado`). Acesso por papel do operador: quem
+  tem papel `operador` só acessa `/caixa`; `supervisor`/`dono` acessam
+  `/caixa` e as telas de gestão.
+- [`supabase/migrations/`](supabase/migrations) — schema do banco
+  multi-tenant, na ordem em que deve ser aplicado.
+- [`supabase/roteiro_teste_multitenant.sql`](supabase/roteiro_teste_multitenant.sql)
+  — roteiro manual (SQL Editor) pra validar isolamento por empresa via RLS;
+  não é uma migration.
 
-## Regras de negócio (não mudaram na migração pro Neon)
+## Como cadastrar um cliente novo (empresa) neste backend
 
-- PDV (`/caixa`) não mostra nenhum valor pro operador (preço, subtotal,
-  total, desconto, troco) — o preço de cada item vem do cadastro de produtos,
-  calculado no servidor.
-- Toda venda exige cliente vinculado; não existe caixa físico
-  (abrir/fechar/sangria/suprimento).
-- Toda venda nasce pendente de conciliação. O admin (`supervisor`/`dono`)
-  concilia a forma de pagamento e pode editar o pedido (itens/preço/desconto)
-  sem limite de tempo, desde que ainda não conciliado.
-- Módulo de Contas a Pagar completo (fornecedores, grupos de despesa,
-  lançamentos avulsos e recorrentes com geração automática de ocorrências).
-- Impressão de pedido em A4, com valores só quando quem imprime é
-  `supervisor`/`dono`.
-- Paleta preto/grafite/cinza e responsivo mobile.
+Todos os clientes rodam sobre o **mesmo** projeto Supabase multi-tenant
+(`customiza-varejo-core`) — cada um é isolado por RLS via `empresa_id`, não
+por projeto Supabase separado. Pra dar de alta um cliente novo:
+
+1. No SQL Editor do `customiza-varejo-core`, cadastre a empresa:
+   ```sql
+   insert into empresas (nome, slug) values ('Nome do Cliente', 'nome-do-cliente');
+   ```
+2. Crie o usuário dono em Authentication → Users no painel do Supabase, e
+   depois rode no SQL Editor (usando o id da empresa do passo 1):
+   ```sql
+   insert into operadores (id, empresa_id, nome, papel)
+   select id, '<empresa_id>', 'Nome do dono', 'dono' from auth.users where email = 'email@do-dono.com';
+   ```
+3. Cada cliente tem seu próprio deploy do app web (este repositório é um
+   exemplo — a Mediterrânea), com `.env` apontando pra `customiza-varejo-core`
+   (URL/anon key são as mesmas pra todos os clientes) e
+   `VITE_NOME_ESTABELECIMENTO` com o nome daquele cliente.
 
 ## Desenvolvimento
 
 ```bash
 npm install
-npm run dev --workspace=backoffice   # app web único (caixa + gestão), porta 5173
+npm run dev --workspace=backoffice   # app web único (caixa + gestão)
 ```
-
-`backoffice/.env` aponta pro projeto Neon (`VITE_NEON_AUTH_URL`,
-`VITE_NEON_DATA_API_URL`, `VITE_NOME_ESTABELECIMENTO`).
-
-## Cadastrar um operador novo
-
-Não tem self-signup — cadastro é manual:
-
-1. Criar o usuário no Neon Auth (console.neon.tech → projeto → Auth → Users,
-   com e-mail/senha), ou via `neon neon-auth user create --email ...`.
-2. Inserir a linha correspondente em `operadores` com o mesmo `id` (uuid) do
-   usuário criado, e o `papel` desejado (`operador`, `supervisor` ou `dono`).
 
 ## Decisões de arquitetura
 

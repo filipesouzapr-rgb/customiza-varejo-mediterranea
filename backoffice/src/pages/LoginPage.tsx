@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { neon } from '../lib/neon'
+import { supabase } from '../lib/supabase'
 import { NOME_ESTABELECIMENTO } from '../lib/config'
 
 export function LoginPage() {
@@ -14,20 +14,10 @@ export function LoginPage() {
     setErro(null)
     setEnviando(true)
 
-    const { error } = await neon.auth.signInWithPassword({ email, password: senha })
+    const { error } = await supabase.auth.signInWithPassword({ email, password: senha })
 
-    if (error) {
-      setEnviando(false)
-      setErro('E-mail ou senha inválidos.')
-      return
-    }
-
-    // O adapter Supabase-compatível do neon-js não emite onAuthStateChange
-    // depois de um signInWithPassword (só no carregamento inicial da
-    // página) - sem isso, o app ficava preso na tela de login mesmo com a
-    // sessão já criada. Reload completo força o useSession a rechamar
-    // getSession(), que já reflete a sessão nova corretamente.
-    window.location.href = '/'
+    setEnviando(false)
+    if (error) setErro('E-mail ou senha inválidos.')
   }
 
   return (

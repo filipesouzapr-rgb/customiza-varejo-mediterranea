@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { neon } from '../lib/neon'
+import { supabase } from '../lib/supabase'
 import type { Produto, UnidadeProduto } from '../types'
 
 const formVazio = {
@@ -22,7 +22,7 @@ export function ProdutosPage() {
 
   async function carregarProdutos() {
     setCarregando(true)
-    const { data, error } = await neon
+    const { data, error } = await supabase
       .from('produtos')
       .select('*')
       .order('nome', { ascending: true })
@@ -49,7 +49,7 @@ export function ProdutosPage() {
   }
 
   async function alternarAtivo(produto: Produto) {
-    const { error } = await neon
+    const { error } = await supabase
       .from('produtos')
       .update({ ativo: !produto.ativo })
       .eq('id', produto.id)
@@ -73,8 +73,8 @@ export function ProdutosPage() {
     }
 
     const { error } = form.id
-      ? await neon.from('produtos').update(payload).eq('id', form.id)
-      : await neon.from('produtos').insert(payload)
+      ? await supabase.from('produtos').update(payload).eq('id', form.id)
+      : await supabase.from('produtos').insert(payload)
 
     setSalvando(false)
 
