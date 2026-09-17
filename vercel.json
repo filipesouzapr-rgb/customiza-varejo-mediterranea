@@ -1,7 +1,7 @@
 {
   "buildCommand": "npm run build --workspace=backoffice",
   "outputDirectory": "backoffice/dist",
-  "installCommand": "npm install",
+  "installCommand": "rm -rf node_modules backoffice/node_modules package-lock.json && npm install",
   "rewrites": [
     { "source": "/(.*)", "destination": "/index.html" }
   ]
