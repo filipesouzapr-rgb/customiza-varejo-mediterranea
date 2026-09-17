@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import type { FormEvent } from 'react'
-import { supabase } from '../../lib/supabase'
+import { neon } from '../../lib/neon'
 import { NOME_ESTABELECIMENTO } from '../../lib/config'
 import { useRelogio } from '../../lib/useRelogio'
 import { SeletorModal } from '../../components/caixa/SeletorModal'
@@ -53,7 +53,7 @@ export function VendaPage({ operador }: Props) {
   const agora = useRelogio()
 
   function carregarProdutos() {
-    supabase
+    neon
       .from('produtos')
       .select('*')
       .eq('ativo', true)
@@ -200,7 +200,7 @@ export function VendaPage({ operador }: Props) {
       setClienteResultados([])
       return
     }
-    const { data } = await supabase
+    const { data } = await neon
       .from('clientes')
       .select('id, nome, cpf, telefone')
       .or(`nome.ilike.%${query}%,cpf.ilike.%${query}%`)
@@ -225,8 +225,7 @@ export function VendaPage({ operador }: Props) {
     setErroFinalizar(null)
     setFinalizando(true)
 
-    const { data, error } = await supabase.rpc('finalizar_venda', {
-      p_operador_id: operador.id,
+    const { data, error } = await neon.rpc('finalizar_venda', {
       p_cliente_id: cliente.id,
       p_itens: itens.map((i) => ({ produto_id: i.produto.id, quantidade: i.quantidade })),
     })

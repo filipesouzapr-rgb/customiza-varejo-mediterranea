@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { supabase } from '../lib/supabase'
+import { neon } from '../lib/neon'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
 import type { FiadoPagamento, PedidoPendente, SaldoFiadoCliente, VendaResumo } from '../types'
 
@@ -51,7 +51,7 @@ export function FiadoPage() {
 
   async function carregarPendentes() {
     setCarregandoPendentes(true)
-    const { data, error } = await supabase
+    const { data, error } = await neon
       .from('vendas')
       .select('id, total, finalizada_em, clientes(nome)')
       .eq('status', 'finalizada')
@@ -73,7 +73,7 @@ export function FiadoPage() {
 
   async function carregarClientes() {
     setCarregandoClientes(true)
-    const { data, error } = await supabase
+    const { data, error } = await neon
       .from('fiado_saldo_por_cliente')
       .select('*')
       .neq('saldo_em_aberto', 0)
@@ -98,7 +98,7 @@ export function FiadoPage() {
 
     const [{ data: vendasData, error: errVendas }, { data: pagamentosData, error: errPag }] =
       await Promise.all([
-        supabase
+        neon
           .from('vendas')
           .select('id, total, finalizada_em, conciliado_em')
           .eq('cliente_id', cliente.cliente_id)
@@ -106,7 +106,7 @@ export function FiadoPage() {
           .gte('finalizada_em', inicio)
           .lte('finalizada_em', fimComHora)
           .order('finalizada_em', { ascending: false }),
-        supabase
+        neon
           .from('fiado_pagamentos')
           .select('id, valor, pago_em, observacoes')
           .eq('cliente_id', cliente.cliente_id)
@@ -139,10 +139,10 @@ export function FiadoPage() {
     setSalvando(true)
     setErro(null)
 
-    const { data: sessao } = await supabase.auth.getSession()
+    const { data: sessao } = await neon.auth.getSession()
     const operadorId = sessao.session?.user.id
 
-    const { error } = await supabase.from('fiado_pagamentos').insert({
+    const { error } = await neon.from('fiado_pagamentos').insert({
       cliente_id: clienteSelecionado.cliente_id,
       valor,
       recebido_por: operadorId,

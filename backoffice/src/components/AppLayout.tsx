@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+import { sair } from '../lib/neon'
 import { NOME_ESTABELECIMENTO } from '../lib/config'
 
 export function AppLayout() {
@@ -27,7 +27,7 @@ export function AppLayout() {
           <NavLink to="/contas-pagar">Contas a pagar</NavLink>
           <NavLink to="/caixa">Caixa</NavLink>
         </nav>
-        <button type="button" className="app-sair" onClick={() => supabase.auth.signOut()}>
+        <button type="button" className="app-sair" onClick={() => sair()}>
           Sair
         </button>
       </header>

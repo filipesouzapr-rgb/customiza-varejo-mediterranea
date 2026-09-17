@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { supabase } from '../lib/supabase'
+import { neon } from '../lib/neon'
 import type { Cliente } from '../types'
 
 const formVazio = {
@@ -25,7 +25,7 @@ export function ClientesPage() {
 
   async function carregarClientes() {
     setCarregando(true)
-    const { data, error } = await supabase
+    const { data, error } = await neon
       .from('clientes')
       .select('*')
       .order('nome', { ascending: true })
@@ -54,7 +54,7 @@ export function ClientesPage() {
   }
 
   async function alternarAtivo(cliente: Cliente) {
-    const { error } = await supabase
+    const { error } = await neon
       .from('clientes')
       .update({ ativo: !cliente.ativo })
       .eq('id', cliente.id)
@@ -80,8 +80,8 @@ export function ClientesPage() {
     }
 
     const { error } = form.id
-      ? await supabase.from('clientes').update(payload).eq('id', form.id)
-      : await supabase.from('clientes').insert(payload)
+      ? await neon.from('clientes').update(payload).eq('id', form.id)
+      : await neon.from('clientes').insert(payload)
 
     setSalvando(false)
 

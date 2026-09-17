@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { supabase } from '../../lib/supabase'
+import { neon } from '../../lib/neon'
 import { NovoLancamentoModal } from './NovoLancamentoModal'
 import { EditarLancamentoModal } from './EditarLancamentoModal'
 import type { Fornecedor, GrupoDespesa } from '../../types'
@@ -66,8 +66,8 @@ export function LancamentosTab() {
 
   async function carregarCadastros() {
     const [{ data: forn }, { data: grup }] = await Promise.all([
-      supabase.from('fornecedores').select('*').eq('ativo', true).order('nome'),
-      supabase.from('grupos_despesa').select('*').eq('ativo', true).order('nome'),
+      neon.from('fornecedores').select('*').eq('ativo', true).order('nome'),
+      neon.from('grupos_despesa').select('*').eq('ativo', true).order('nome'),
     ])
     setFornecedores((forn as Fornecedor[]) ?? [])
     setGrupos((grup as GrupoDespesa[]) ?? [])
@@ -75,7 +75,7 @@ export function LancamentosTab() {
 
   async function carregarEmAtraso() {
     const hoje = dataISO(new Date())
-    const { data } = await supabase
+    const { data } = await neon
       .from('contas_pagar')
       .select('valor, desconto')
       .eq('status', 'nao_conciliado')
@@ -90,7 +90,7 @@ export function LancamentosTab() {
     setCarregando(true)
     setErro(null)
 
-    let query = supabase
+    let query = neon
       .from('contas_pagar')
       .select('id, descricao, valor, desconto, data_vencimento, status, fornecedores(nome), grupos_despesa(nome)')
       .gte('data_vencimento', filtroInicio)
@@ -131,7 +131,7 @@ export function LancamentosTab() {
 
   useEffect(() => {
     async function iniciar() {
-      await supabase.rpc('gerar_ocorrencias_contas_pagar')
+      await neon.rpc('gerar_ocorrencias_contas_pagar')
       await carregarCadastros()
       await recarregarTudo()
     }

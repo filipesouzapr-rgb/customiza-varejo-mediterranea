@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import type { FormEvent } from 'react'
-import { supabase } from '../../lib/supabase'
+import { neon } from '../../lib/neon'
 import type { Fornecedor, GrupoDespesa, Periodicidade } from '../../types'
 
 interface Props {
@@ -43,7 +43,7 @@ export function NovoLancamentoModal({ fornecedores, grupos, onFechar, onCriado }
     setSalvando(true)
 
     if (!recorrente) {
-      const { error } = await supabase.from('contas_pagar').insert({
+      const { error } = await neon.from('contas_pagar').insert({
         fornecedor_id: fornecedorId || null,
         grupo_id: grupoId,
         descricao,
@@ -62,7 +62,7 @@ export function NovoLancamentoModal({ fornecedores, grupos, onFechar, onCriado }
       return
     }
 
-    const { error: errRegra } = await supabase.from('contas_pagar_regras').insert({
+    const { error: errRegra } = await neon.from('contas_pagar_regras').insert({
       fornecedor_id: fornecedorId || null,
       grupo_id: grupoId,
       descricao,
@@ -80,7 +80,7 @@ export function NovoLancamentoModal({ fornecedores, grupos, onFechar, onCriado }
       return
     }
 
-    const { error: errGerar } = await supabase.rpc('gerar_ocorrencias_contas_pagar')
+    const { error: errGerar } = await neon.rpc('gerar_ocorrencias_contas_pagar')
 
     setSalvando(false)
     if (errGerar) {

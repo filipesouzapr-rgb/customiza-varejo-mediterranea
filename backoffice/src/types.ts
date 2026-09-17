@@ -12,7 +12,6 @@ export interface Produto {
   ativo: boolean
   criado_em: string
   atualizado_em: string
-  empresa_id: string
 }
 
 export type NovoProduto = Pick<Produto, 'nome' | 'unidade' | 'preco'> &
@@ -23,15 +22,6 @@ export interface Operador {
   nome: string
   papel: 'operador' | 'supervisor' | 'dono'
   ativo: boolean
-  empresa_id: string
-}
-
-export interface CaixaSessao {
-  id: string
-  operador_id: string
-  aberto_em: string
-  fechado_em: string | null
-  valor_abertura: number
 }
 
 export type FormaPagamento = 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix' | 'fiado'
@@ -56,7 +46,6 @@ export interface Cliente {
   eh_revendedor: boolean
   ativo: boolean
   criado_em: string
-  empresa_id: string
 }
 
 export type NovoCliente = Pick<Cliente, 'nome'> &
@@ -102,14 +91,12 @@ export interface Fornecedor {
   cpf_cnpj: string | null
   telefone: string | null
   ativo: boolean
-  empresa_id: string
 }
 
 export interface GrupoDespesa {
   id: string
   nome: string
   ativo: boolean
-  empresa_id: string
 }
 
 export type Periodicidade = 'semanal' | 'quinzenal' | 'mensal'

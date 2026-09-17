@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
-import { supabase } from '../../lib/supabase'
+import { neon } from '../../lib/neon'
 import type { GrupoDespesa } from '../../types'
 
 const formVazio = { id: null as string | null, nome: '' }
@@ -14,7 +14,7 @@ export function GruposDespesaTab() {
 
   async function carregar() {
     setCarregando(true)
-    const { data, error } = await supabase.from('grupos_despesa').select('*').order('nome')
+    const { data, error } = await neon.from('grupos_despesa').select('*').order('nome')
     if (error) setErro(error.message)
     else setGrupos((data as GrupoDespesa[]) ?? [])
     setCarregando(false)
@@ -29,7 +29,7 @@ export function GruposDespesaTab() {
   }
 
   async function alternarAtivo(g: GrupoDespesa) {
-    const { error } = await supabase.from('grupos_despesa').update({ ativo: !g.ativo }).eq('id', g.id)
+    const { error } = await neon.from('grupos_despesa').update({ ativo: !g.ativo }).eq('id', g.id)
     if (error) setErro(error.message)
     else carregar()
   }
@@ -42,8 +42,8 @@ export function GruposDespesaTab() {
     const payload = { nome: form.nome }
 
     const { error } = form.id
-      ? await supabase.from('grupos_despesa').update(payload).eq('id', form.id)
-      : await supabase.from('grupos_despesa').insert(payload)
+      ? await neon.from('grupos_despesa').update(payload).eq('id', form.id)
+      : await neon.from('grupos_despesa').insert(payload)
 
     setSalvando(false)
     if (error) {
