@@ -408,7 +408,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
                             onChange={(e) => atualizarItem(i, 'quantidade', e.target.value)}
                           />
                           <div className="venda-peso-estoque">
-                            estoque: {limiteEstoque(item.produto_id, i)}
+                            est.: {limiteEstoque(item.produto_id, i)}
                           </div>
                         </>
                       ) : (

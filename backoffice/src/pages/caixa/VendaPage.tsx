@@ -421,7 +421,7 @@ export function VendaPage({ operador }: Props) {
                 {produtoQuantidadePendente.unidade === 'kg' ? 'informe o peso (kg)' : 'informe a quantidade'}
               </span>
               <span className="venda-peso-estoque">
-                Estoque disponível: {estoqueDisponivelPara(produtoQuantidadePendente)}
+                Est.: {estoqueDisponivelPara(produtoQuantidadePendente)}
                 {produtoQuantidadePendente.unidade === 'kg' ? 'kg' : ' un.'}
               </span>
               <input
@@ -473,7 +473,7 @@ export function VendaPage({ operador }: Props) {
                   />
                   {item.produto.unidade === 'kg' ? 'kg' : ''}
                   <span className="cart-qty-estoque">
-                    estoque: {estoqueDisponivelPara(item.produto, i)}
+                    est.: {estoqueDisponivelPara(item.produto, i)}
                   </span>
                 </span>
                 <button type="button" onClick={() => removerItem(i)}>
@@ -538,7 +538,7 @@ export function VendaPage({ operador }: Props) {
           itens={produtosFiltrados.map((p) => ({
             id: p.id,
             label: p.nome,
-            sublabel: `${p.unidade === 'kg' ? 'kg' : 'un'} · estoque: ${estoqueDisponivelPara(p)}${p.unidade === 'kg' ? 'kg' : ''}`,
+            sublabel: `${p.unidade === 'kg' ? 'kg' : 'un'} · est.: ${estoqueDisponivelPara(p)}${p.unidade === 'kg' ? 'kg' : ''}`,
           }))}
           onQueryChange={setBuscaProdutoQuery}
           onSelecionar={(id) => {

@@ -504,6 +504,8 @@
   margin-left: auto;
   color: var(--ink-soft);
   font-size: 12px;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .seletor-modal-vazio {
