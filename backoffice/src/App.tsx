@@ -5,6 +5,7 @@ import { LoginPage } from './pages/LoginPage'
 import { ProdutosPage } from './pages/ProdutosPage'
 import { ClientesPage } from './pages/ClientesPage'
 import { FiadoPage } from './pages/FiadoPage'
+import { VendasPage } from './pages/VendasPage'
 import { ContasPagarPage } from './pages/ContasPagarPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CaixaApp, SemAcesso } from './pages/caixa/CaixaApp'
@@ -45,6 +46,7 @@ function App() {
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/produtos" element={<ProdutosPage />} />
         <Route path="/clientes" element={<ClientesPage />} />
+        <Route path="/vendas" element={<VendasPage />} />
         <Route path="/fiado" element={<FiadoPage />} />
         <Route path="/contas-pagar" element={<ContasPagarPage />} />
       </Route>
