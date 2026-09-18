@@ -263,6 +263,18 @@ tr.inativo {
   font-weight: 500;
 }
 
+.sucesso {
+  color: var(--green);
+  font-weight: 500;
+}
+
+.parametros-form-senha {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  max-width: 320px;
+}
+
 .fiado-page {
   display: flex;
   gap: 32px;

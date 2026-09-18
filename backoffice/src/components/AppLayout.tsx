@@ -27,6 +27,7 @@ export function AppLayout() {
           <NavLink to="/fiado">Fiado</NavLink>
           <NavLink to="/contas-pagar">Contas a pagar</NavLink>
           <NavLink to="/caixa">Caixa</NavLink>
+          <NavLink to="/parametros">Parâmetros</NavLink>
         </nav>
         <button type="button" className="app-sair" onClick={() => supabase.auth.signOut()}>
           Sair
