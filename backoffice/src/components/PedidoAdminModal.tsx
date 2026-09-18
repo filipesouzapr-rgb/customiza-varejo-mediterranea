@@ -316,6 +316,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
           <p>Carregando...</p>
         ) : (
           <>
+          <div className="pedido-admin-corpo">
             {erro && <p className="erro">{erro}</p>}
 
             {podeEditar ? (
@@ -487,8 +488,9 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
                 )}
               </>
             )}
+          </div>
 
-            <div className="modal-acoes">
+            <div className="modal-acoes pedido-admin-rodape">
               {podeCancelar && (
                 <button type="button" onClick={cancelarPedido} disabled={salvando}>
                   Cancelar pedido
