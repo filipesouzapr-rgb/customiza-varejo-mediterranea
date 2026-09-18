@@ -83,6 +83,10 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [buscandoProduto, setBuscandoProduto] = useState(false)
   const [buscaQuery, setBuscaQuery] = useState('')
+  // quantidade original (ja deduzida do estoque) por produto, no momento em
+  // que o modal abriu - usado pra calcular ate onde da pra aumentar a
+  // quantidade de um item sem violar o estoque real.
+  const [reservadoOriginal, setReservadoOriginal] = useState<Record<string, number>>({})
 
   async function carregar() {
     setCarregando(true)
@@ -121,14 +125,23 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     setDesconto(String(vendaDetalhe.desconto ?? 0))
     setProdutos((produtosData as Produto[]) ?? [])
 
+    const itensCarregados = (itensData ?? []) as unknown as ItemRaw[]
+
     setItens(
-      ((itensData ?? []) as unknown as ItemRaw[]).map((i) => ({
+      itensCarregados.map((i) => ({
         produto_id: i.produto_id,
         nome: i.produtos?.nome ?? '—',
         unidade: i.produtos?.unidade ?? 'unidade',
         quantidade: String(i.quantidade),
         preco_unitario: String(i.preco_unitario),
       })),
+    )
+
+    setReservadoOriginal(
+      itensCarregados.reduce<Record<string, number>>((acc, i) => {
+        acc[i.produto_id] = (acc[i.produto_id] ?? 0) + i.quantidade
+        return acc
+      }, {}),
     )
 
     if (vendaDetalhe.conciliado_em) {
@@ -157,7 +170,32 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
   const totalPagoForm = pagamentosForm.reduce((soma, p) => soma + (Number(p.valor) || 0), 0)
   const restanteForm = Math.round((totalAtual - totalPagoForm) * 100) / 100
 
+  // Ate quanto da pra colocar nessa linha (produtoId) sem estourar o
+  // estoque - soma o que ja estava reservado por essa venda (essa
+  // quantidade ja foi deduzida no banco, entao "volta" pro calculo) menos o
+  // que outras linhas do mesmo produto ja estao usando no pedido em edicao.
+  function limiteEstoque(produtoId: string, ignorarIndex?: number) {
+    const emEstoque = produtos.find((p) => p.id === produtoId)?.estoque_atual ?? 0
+    const reservado = reservadoOriginal[produtoId] ?? 0
+    const emOutrasLinhas = itens.reduce(
+      (soma, item, i) =>
+        item.produto_id === produtoId && i !== ignorarIndex ? soma + (Number(item.quantidade) || 0) : soma,
+      0,
+    )
+    return emEstoque + reservado - emOutrasLinhas
+  }
+
   function atualizarItem(index: number, campo: 'quantidade' | 'preco_unitario', valor: string) {
+    if (campo === 'quantidade') {
+      const item = itens[index]
+      const quantidade = Number(valor)
+      const limite = limiteEstoque(item.produto_id, index)
+      if (quantidade > limite) {
+        setErro(`Quantidade indisponível para "${item.nome}" — estoque atual: ${limite}`)
+        return
+      }
+      setErro(null)
+    }
     setItens((atual) => atual.map((item, i) => (i === index ? { ...item, [campo]: valor } : item)))
   }
 
@@ -166,6 +204,13 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
   }
 
   function adicionarProduto(produto: Produto) {
+    const limite = limiteEstoque(produto.id)
+    if (limite < 1) {
+      setErro(`Quantidade indisponível para "${produto.nome}" — estoque atual: ${limite}`)
+      setBuscandoProduto(false)
+      return
+    }
+    setErro(null)
     setItens((atual) => [
       ...atual,
       {
@@ -354,13 +399,18 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
                     <td>{item.nome}</td>
                     <td>
                       {podeEditar ? (
-                        <input
-                          type="number"
-                          step="0.001"
-                          min="0"
-                          value={item.quantidade}
-                          onChange={(e) => atualizarItem(i, 'quantidade', e.target.value)}
-                        />
+                        <>
+                          <input
+                            type="number"
+                            step="0.001"
+                            min="0"
+                            value={item.quantidade}
+                            onChange={(e) => atualizarItem(i, 'quantidade', e.target.value)}
+                          />
+                          <div className="venda-peso-estoque">
+                            estoque: {limiteEstoque(item.produto_id, i)}
+                          </div>
+                        </>
                       ) : (
                         `${item.quantidade}${item.unidade === 'kg' ? 'kg' : ''}`
                       )}

@@ -37,6 +37,7 @@ export function VendaPage({ operador }: Props) {
   const [quantidadeInput, setQuantidadeInput] = useState('')
 
   const [itens, setItens] = useState<ItemCarrinho[]>([])
+  const [erroEstoque, setErroEstoque] = useState<string | null>(null)
   const [cliente, setCliente] = useState<ClienteResumo | null>(null)
   const [clienteResultados, setClienteResultados] = useState<ClienteResumo[]>([])
 
@@ -106,7 +107,28 @@ export function VendaPage({ operador }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [modo, itens, cliente, finalizando, vendaConcluida])
 
+  // Quanto ainda dá pra lançar desse produto, descontando o que já está no
+  // carrinho (pode estar espalhado em mais de uma linha, no caso de kg).
+  // ignorarIndex exclui a própria linha sendo editada do cálculo.
+  function estoqueDisponivelPara(produto: Produto, ignorarIndex?: number) {
+    const jaNoCarrinho = itens.reduce(
+      (soma, item, i) =>
+        item.produto.id === produto.id && i !== ignorarIndex ? soma + item.quantidade : soma,
+      0,
+    )
+    return produto.estoque_atual - jaNoCarrinho
+  }
+
   function adicionarItem(produto: Produto, quantidade: number) {
+    const disponivel = estoqueDisponivelPara(produto)
+    if (quantidade > disponivel) {
+      setErroEstoque(
+        `Quantidade indisponível para "${produto.nome}" — estoque atual: ${disponivel}${produto.unidade === 'kg' ? 'kg' : ' un.'}`,
+      )
+      return false
+    }
+
+    setErroEstoque(null)
     setItens((atual) => {
       if (produto.unidade === 'unidade') {
         const existente = atual.find((i) => i.produto.id === produto.id)
@@ -118,6 +140,7 @@ export function VendaPage({ operador }: Props) {
       }
       return [...atual, { produto, quantidade }]
     })
+    return true
   }
 
   // Selecionar pela busca por nome (F2) sempre pergunta a quantidade — é o
@@ -165,6 +188,7 @@ export function VendaPage({ operador }: Props) {
     }
 
     setCodigo('')
+    setErroEstoque(null)
 
     if (quantidadeInformada && quantidadeInformada > 0) {
       adicionarItem(produto, quantidadeInformada)
@@ -180,7 +204,7 @@ export function VendaPage({ operador }: Props) {
     const quantidade = Number(quantidadeInput)
     if (!quantidade || quantidade <= 0) return
 
-    adicionarItem(produtoQuantidadePendente, quantidade)
+    if (!adicionarItem(produtoQuantidadePendente, quantidade)) return
     setProdutoQuantidadePendente(null)
     setQuantidadeInput('')
   }
@@ -192,7 +216,16 @@ export function VendaPage({ operador }: Props) {
   function atualizarQuantidadeItem(index: number, valor: string) {
     const quantidade = Number(valor)
     if (!quantidade || quantidade <= 0) return
-    setItens((atual) => atual.map((item, i) => (i === index ? { ...item, quantidade } : item)))
+    const item = itens[index]
+    const disponivel = estoqueDisponivelPara(item.produto, index)
+    if (quantidade > disponivel) {
+      setErroEstoque(
+        `Quantidade indisponível para "${item.produto.nome}" — estoque atual: ${disponivel}${item.produto.unidade === 'kg' ? 'kg' : ' un.'}`,
+      )
+      return
+    }
+    setErroEstoque(null)
+    setItens((atual) => atual.map((i, idx) => (idx === index ? { ...i, quantidade } : i)))
   }
 
   async function buscarClientes(query: string) {
@@ -379,12 +412,17 @@ export function VendaPage({ operador }: Props) {
             Buscar produto (F2)
           </button>
           {erroCodigo && <p className="erro">{erroCodigo}</p>}
+          {erroEstoque && <p className="erro">{erroEstoque}</p>}
 
           {produtoQuantidadePendente && (
             <form onSubmit={confirmarQuantidadePendente} className="venda-peso">
               <span className="venda-peso-label">
                 {produtoQuantidadePendente.nome} —{' '}
                 {produtoQuantidadePendente.unidade === 'kg' ? 'informe o peso (kg)' : 'informe a quantidade'}
+              </span>
+              <span className="venda-peso-estoque">
+                Estoque disponível: {estoqueDisponivelPara(produtoQuantidadePendente)}
+                {produtoQuantidadePendente.unidade === 'kg' ? 'kg' : ' un.'}
               </span>
               <input
                 type="number"
@@ -434,6 +472,9 @@ export function VendaPage({ operador }: Props) {
                     onChange={(e) => atualizarQuantidadeItem(i, e.target.value)}
                   />
                   {item.produto.unidade === 'kg' ? 'kg' : ''}
+                  <span className="cart-qty-estoque">
+                    estoque: {estoqueDisponivelPara(item.produto, i)}
+                  </span>
                 </span>
                 <button type="button" onClick={() => removerItem(i)}>
                   Remover
@@ -497,7 +538,7 @@ export function VendaPage({ operador }: Props) {
           itens={produtosFiltrados.map((p) => ({
             id: p.id,
             label: p.nome,
-            sublabel: p.unidade === 'kg' ? 'kg' : 'un',
+            sublabel: `${p.unidade === 'kg' ? 'kg' : 'un'} · estoque: ${estoqueDisponivelPara(p)}${p.unidade === 'kg' ? 'kg' : ''}`,
           }))}
           onQueryChange={setBuscaProdutoQuery}
           onSelecionar={(id) => {

@@ -188,6 +188,12 @@
   gap: 8px;
 }
 
+.venda-peso-estoque {
+  font-size: 12px;
+  color: var(--ink-soft);
+  white-space: nowrap;
+}
+
 /* itemized cart list — só item/descrição/qtd/remover, sem nenhum valor */
 
 .cart {
@@ -260,6 +266,12 @@
   gap: 4px;
   color: var(--ink-soft);
   font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.cart-qty-estoque {
+  font-size: 10px;
+  color: var(--ink-soft);
   white-space: nowrap;
 }
 
