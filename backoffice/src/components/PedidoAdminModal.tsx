@@ -273,8 +273,28 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     onFechar()
   }
 
+  async function reativarPedido() {
+    if (!window.confirm('Reativar este pedido? O estoque dos itens será deduzido de novo.')) return
+
+    setErro(null)
+    setSalvando(true)
+
+    const { error } = await supabase.rpc('reativar_venda', { p_venda_id: vendaId })
+
+    setSalvando(false)
+
+    if (error) {
+      setErro(error.message)
+      return
+    }
+
+    await carregar()
+    onAtualizado()
+  }
+
   const podeEditar = status === 'finalizada'
   const podeCancelar = status === 'finalizada'
+  const podeReativar = status === 'cancelada'
 
   return (
     <div className="modal-fundo">
@@ -472,6 +492,11 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
               {podeCancelar && (
                 <button type="button" onClick={cancelarPedido} disabled={salvando}>
                   Cancelar pedido
+                </button>
+              )}
+              {podeReativar && (
+                <button type="button" onClick={reativarPedido} disabled={salvando}>
+                  {salvando ? 'Reativando...' : 'Reativar pedido'}
                 </button>
               )}
               <button type="button" onClick={onFechar}>
