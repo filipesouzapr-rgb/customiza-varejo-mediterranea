@@ -28,6 +28,7 @@ interface VendaDetalhe {
   conciliado_em: string | null
   desconto: number
   total: number
+  finalizada_em: string | null
   clientes: { nome: string } | null
 }
 
@@ -50,6 +51,19 @@ function moeda(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
 
+// <input type="datetime-local"> trabalha em horário local, sem timezone
+// (ex: "2026-09-11T14:30") - as duas funções convertem pra ida e volta do
+// timestamptz (UTC) que vem/vai pro banco.
+function paraDatetimeLocal(iso: string) {
+  const d = new Date(iso)
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
+function deDatetimeLocal(valor: string) {
+  return new Date(valor).toISOString()
+}
+
 export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
@@ -58,6 +72,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
   const [clienteNome, setClienteNome] = useState('')
   const [status, setStatus] = useState('')
   const [conciliadoEm, setConciliadoEm] = useState<string | null>(null)
+  const [dataVendaInput, setDataVendaInput] = useState('')
   const [itens, setItens] = useState<ItemEditavel[]>([])
   const [desconto, setDesconto] = useState('0')
   const [pagamentosConciliados, setPagamentosConciliados] = useState<
@@ -77,7 +92,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
       await Promise.all([
         supabase
           .from('vendas')
-          .select('id, status, conciliado_em, desconto, total, clientes(nome)')
+          .select('id, status, conciliado_em, desconto, total, finalizada_em, clientes(nome)')
           .eq('id', vendaId)
           .single(),
         supabase
@@ -102,6 +117,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     setClienteNome(vendaDetalhe.clientes?.nome ?? '—')
     setStatus(vendaDetalhe.status)
     setConciliadoEm(vendaDetalhe.conciliado_em)
+    setDataVendaInput(vendaDetalhe.finalizada_em ? paraDatetimeLocal(vendaDetalhe.finalizada_em) : '')
     setDesconto(String(vendaDetalhe.desconto ?? 0))
     setProdutos((produtosData as Produto[]) ?? [])
 
@@ -168,6 +184,10 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
       setErro('O pedido precisa ter ao menos 1 item.')
       return
     }
+    if (!dataVendaInput) {
+      setErro('Informe a data da venda.')
+      return
+    }
     setErro(null)
     setSalvando(true)
 
@@ -179,6 +199,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
         preco_unitario: Number(i.preco_unitario),
       })),
       p_desconto: Number(desconto) || 0,
+      p_finalizada_em: deDatetimeLocal(dataVendaInput),
     })
 
     setSalvando(false)
@@ -252,7 +273,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     onFechar()
   }
 
-  const podeEditar = status === 'finalizada' && !conciliadoEm
+  const podeEditar = status === 'finalizada'
   const podeCancelar = status === 'finalizada'
 
   return (
@@ -276,6 +297,24 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
         ) : (
           <>
             {erro && <p className="erro">{erro}</p>}
+
+            {podeEditar ? (
+              <div className="cliente-box">
+                <div className="cliente-header">Data da venda</div>
+                <hr className="cliente-rule" />
+                <input
+                  type="datetime-local"
+                  value={dataVendaInput}
+                  onChange={(e) => setDataVendaInput(e.target.value)}
+                />
+              </div>
+            ) : (
+              dataVendaInput && (
+                <p className="venda-cliente-vazio">
+                  Data da venda: {new Date(deDatetimeLocal(dataVendaInput)).toLocaleString('pt-BR')}
+                </p>
+              )
+            )}
 
             <div className="tabela-scroll">
             <table className="pedido-admin-itens">
@@ -361,7 +400,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
               </div>
             )}
 
-            {podeEditar && (
+            {podeEditar && !conciliadoEm && (
               <>
                 <hr className="cliente-rule" />
                 <h3>Conciliar pagamento</h3>
@@ -412,14 +451,21 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
             )}
 
             {conciliadoEm && pagamentosConciliados.length > 0 && (
-              <ul className="venda-pagamentos-lista">
-                {pagamentosConciliados.map((p, i) => (
-                  <li key={i}>
-                    <span>{rotuloForma[p.forma]}</span>
-                    <span>{moeda(p.valor)}</span>
-                  </li>
-                ))}
-              </ul>
+              <>
+                <ul className="venda-pagamentos-lista">
+                  {pagamentosConciliados.map((p, i) => (
+                    <li key={i}>
+                      <span>{rotuloForma[p.forma]}</span>
+                      <span>{moeda(p.valor)}</span>
+                    </li>
+                  ))}
+                </ul>
+                {podeEditar && (
+                  <p className="venda-cliente-vazio">
+                    Editar itens/desconto reajusta esses valores proporcionalmente ao novo total.
+                  </p>
+                )}
+              </>
             )}
 
             <div className="modal-acoes">
