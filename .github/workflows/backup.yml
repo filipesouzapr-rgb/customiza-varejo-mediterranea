@@ -25,7 +25,7 @@ jobs:
         run: |
           data=$(date +%Y-%m-%d)
           url=$(printf '%s' "$DATABASE_URL" | tr -d '[:space:]')
-          pg_dump "$url" --no-owner --no-privileges -Fc -f "backup-$data.dump"
+          /usr/lib/postgresql/17/bin/pg_dump "$url" --no-owner --no-privileges -Fc -f "backup-$data.dump"
 
       - name: Sobe o backup como artifact
         uses: actions/upload-artifact@v4
