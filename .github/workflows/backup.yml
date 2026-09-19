@@ -20,7 +20,8 @@ jobs:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
         run: |
           data=$(date +%Y-%m-%d)
-          pg_dump "$DATABASE_URL" --no-owner --no-privileges -Fc -f "backup-$data.dump"
+          url=$(printf '%s' "$DATABASE_URL" | tr -d '[:space:]')
+          pg_dump "$url" --no-owner --no-privileges -Fc -f "backup-$data.dump"
 
       - name: Sobe o backup como artifact
         uses: actions/upload-artifact@v4
