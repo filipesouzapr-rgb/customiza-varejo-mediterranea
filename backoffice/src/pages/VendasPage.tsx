@@ -9,6 +9,7 @@ interface VendaLinha {
   finalizada_em: string
   status: 'finalizada' | 'cancelada'
   cliente_nome: string | null
+  operador_nome: string | null
   formas_pagamento: FormaPagamento[]
 }
 
@@ -18,6 +19,7 @@ interface VendaRaw {
   finalizada_em: string
   status: 'aberta' | 'finalizada' | 'cancelada'
   clientes: { nome: string } | null
+  operadores: { nome: string } | null
   // venda_pagamentos.venda_id NAO e unique aqui (conciliacao pode dividir o
   // pagamento em mais de uma forma) - o embed vem como array.
   venda_pagamentos: { forma: FormaPagamento }[] | null
@@ -80,7 +82,7 @@ export function VendasPage() {
 
     const { data, error } = await supabase
       .from('vendas')
-      .select('id, total, finalizada_em, status, clientes(nome), venda_pagamentos(forma)')
+      .select('id, total, finalizada_em, status, clientes(nome), operadores(nome), venda_pagamentos(forma)')
       .in('status', ['finalizada', 'cancelada'])
       .gte('finalizada_em', inicio)
       .lte('finalizada_em', fimComHora)
@@ -101,6 +103,7 @@ export function VendasPage() {
         finalizada_em: v.finalizada_em,
         status: v.status as 'finalizada' | 'cancelada',
         cliente_nome: v.clientes?.nome ?? null,
+        operador_nome: v.operadores?.nome ?? null,
         formas_pagamento: (v.venda_pagamentos ?? []).map((p) => p.forma),
       })),
     )
@@ -165,6 +168,7 @@ export function VendasPage() {
                 <tr>
                   <th>Data</th>
                   <th>Cliente</th>
+                  <th>Operador</th>
                   <th>Total</th>
                   <th>Forma</th>
                   <th>Status</th>
@@ -175,6 +179,7 @@ export function VendasPage() {
                   <tr key={v.id} className="linha-clicavel" onClick={() => setVendaAberta(v.id)}>
                     <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
                     <td>{v.cliente_nome ?? '—'}</td>
+                    <td>{v.operador_nome ?? '—'}</td>
                     <td>{moeda(v.total)}</td>
                     <td>{rotuloFormas(v.formas_pagamento)}</td>
                     <td>
@@ -188,7 +193,7 @@ export function VendasPage() {
                 ))}
                 {vendasFiltradas.length === 0 && (
                   <tr>
-                    <td colSpan={5}>Nenhuma venda no período/filtro selecionado.</td>
+                    <td colSpan={6}>Nenhuma venda no período/filtro selecionado.</td>
                   </tr>
                 )}
               </tbody>

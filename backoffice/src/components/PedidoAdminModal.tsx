@@ -30,6 +30,7 @@ interface VendaDetalhe {
   total: number
   finalizada_em: string | null
   clientes: { nome: string } | null
+  operadores: { nome: string } | null
 }
 
 interface ItemRaw {
@@ -70,6 +71,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
   const [salvando, setSalvando] = useState(false)
 
   const [clienteNome, setClienteNome] = useState('')
+  const [operadorNome, setOperadorNome] = useState('')
   const [status, setStatus] = useState('')
   const [conciliadoEm, setConciliadoEm] = useState<string | null>(null)
   const [dataVendaInput, setDataVendaInput] = useState('')
@@ -96,7 +98,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
       await Promise.all([
         supabase
           .from('vendas')
-          .select('id, status, conciliado_em, desconto, total, finalizada_em, clientes(nome)')
+          .select('id, status, conciliado_em, desconto, total, finalizada_em, clientes(nome), operadores(nome)')
           .eq('id', vendaId)
           .single(),
         supabase
@@ -119,6 +121,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
 
     const vendaDetalhe = venda as unknown as VendaDetalhe
     setClienteNome(vendaDetalhe.clientes?.nome ?? '—')
+    setOperadorNome(vendaDetalhe.operadores?.nome ?? '—')
     setStatus(vendaDetalhe.status)
     setConciliadoEm(vendaDetalhe.conciliado_em)
     setDataVendaInput(vendaDetalhe.finalizada_em ? paraDatetimeLocal(vendaDetalhe.finalizada_em) : '')
@@ -346,6 +349,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
       <div className="modal-caixa pedido-admin">
         <div className="pedido-admin-cabecalho">
           <h2>Pedido — {clienteNome}</h2>
+          <span className="venda-cliente-vazio">Vendido por: {operadorNome}</span>
           {status === 'cancelada' && <span className="badge badge-cancelado">Cancelado</span>}
           {status === 'finalizada' && conciliadoEm && (
             <span className="badge badge-conciliado">
