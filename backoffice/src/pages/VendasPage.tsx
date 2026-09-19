@@ -82,7 +82,7 @@ export function VendasPage() {
 
     const { data, error } = await supabase
       .from('vendas')
-      .select('id, total, finalizada_em, status, clientes(nome), operadores(nome), venda_pagamentos(forma)')
+      .select('id, total, finalizada_em, status, clientes(nome), operadores!operador_id(nome), venda_pagamentos(forma)')
       .in('status', ['finalizada', 'cancelada'])
       .gte('finalizada_em', inicio)
       .lte('finalizada_em', fimComHora)

@@ -98,7 +98,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
       await Promise.all([
         supabase
           .from('vendas')
-          .select('id, status, conciliado_em, desconto, total, finalizada_em, clientes(nome), operadores(nome)')
+          .select('id, status, conciliado_em, desconto, total, finalizada_em, clientes(nome), operadores!operador_id(nome)')
           .eq('id', vendaId)
           .single(),
         supabase
