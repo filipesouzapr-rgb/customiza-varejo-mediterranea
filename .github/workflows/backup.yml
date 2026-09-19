@@ -17,7 +17,8 @@ jobs:
           sudo sh -c 'echo "deb https://apt.postgresql.org/pub/repos/apt $(lsb_release -cs)-pgdg main" > /etc/apt/sources.list.d/pgdg.list'
           curl -fsSL https://www.postgresql.org/media/keys/ACCC4CF8.asc | sudo gpg --dearmor -o /etc/apt/trusted.gpg.d/postgresql.gpg
           sudo apt-get update
-          sudo apt-get install -y postgresql-client-17
+          # instala a versao de cliente mais recente disponivel, pra acompanhar upgrades do servidor
+          sudo apt-cache search 'postgresql-client-[0-9]+$' | grep -oE 'postgresql-client-[0-9]+' | sort -Vu | tail -1 | xargs sudo apt-get install -y
 
       - name: Gera o dump
         env:
@@ -25,7 +26,9 @@ jobs:
         run: |
           data=$(date +%Y-%m-%d)
           url=$(printf '%s' "$DATABASE_URL" | tr -d '[:space:]')
-          /usr/lib/postgresql/17/bin/pg_dump "$url" --no-owner --no-privileges -Fc -f "backup-$data.dump"
+          # usa o pg_dump mais novo instalado, o runner do GitHub ja vem com um mais antigo fora do sistema de alternatives
+          pgdump=$(ls -d /usr/lib/postgresql/*/bin/pg_dump | sort -V | tail -1)
+          "$pgdump" "$url" --no-owner --no-privileges -Fc -f "backup-$data.dump"
 
       - name: Sobe o backup como artifact
         uses: actions/upload-artifact@v4
