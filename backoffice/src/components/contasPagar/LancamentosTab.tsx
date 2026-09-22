@@ -182,8 +182,8 @@ export function LancamentosTab() {
           Status
           <select value={filtroStatus} onChange={(e) => setFiltroStatus(e.target.value as typeof filtroStatus)}>
             <option value="todos">Todos</option>
-            <option value="nao_conciliado">Não conciliado</option>
-            <option value="conciliado">Conciliado</option>
+            <option value="nao_conciliado">Pendente</option>
+            <option value="conciliado">Pago</option>
           </select>
         </label>
         <label>
@@ -245,9 +245,9 @@ export function LancamentosTab() {
                     <td>{moeda(Number(l.valor) - Number(l.desconto))}</td>
                     <td>
                       {l.status === 'conciliado' ? (
-                        <span className="badge badge-conciliado">Conciliado</span>
+                        <span className="badge badge-conciliado">Pago</span>
                       ) : (
-                        <span className="badge badge-pendente">{vencida ? 'Vencida' : 'Pendente'}</span>
+                        <span className="badge badge-pendente">{vencida ? 'Atrasado' : 'Pendente'}</span>
                       )}
                     </td>
                   </tr>

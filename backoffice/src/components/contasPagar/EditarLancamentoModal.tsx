@@ -178,7 +178,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
           <h2>Conta a pagar</h2>
           {conta && (
             <span className={`badge ${conta.status === 'conciliado' ? 'badge-conciliado' : 'badge-pendente'}`}>
-              {conta.status === 'conciliado' ? 'Conciliado' : 'Não conciliado'}
+              {conta.status === 'conciliado' ? 'Pago' : 'Pendente'}
             </span>
           )}
         </div>
@@ -287,7 +287,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
             {podeEditar && (
               <>
                 <hr className="cliente-rule" />
-                <h3>Conciliar (dar baixa)</h3>
+                <h3>Dar baixa (pagar)</h3>
                 <label>
                   Data de pagamento
                   <input
@@ -311,7 +311,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
                 </label>
                 <div className="modal-acoes">
                   <button type="button" onClick={confirmarConciliacao} disabled={salvando}>
-                    {salvando ? 'Confirmando...' : 'Confirmar conciliação'}
+                    {salvando ? 'Confirmando...' : 'Confirmar pagamento'}
                   </button>
                 </div>
               </>
