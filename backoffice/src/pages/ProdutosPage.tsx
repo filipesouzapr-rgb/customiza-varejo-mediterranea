@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { ProdutoPecasModal } from '../components/ProdutoPecasModal'
 import type { Produto, UnidadeProduto } from '../types'
 
 const formVazio = {
@@ -19,6 +20,7 @@ export function ProdutosPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [form, setForm] = useState(formVazio)
   const [salvando, setSalvando] = useState(false)
+  const [produtoPecas, setProdutoPecas] = useState<Produto | null>(null)
 
   async function carregarProdutos() {
     setCarregando(true)
@@ -195,6 +197,9 @@ export function ProdutosPage() {
                       <button type="button" onClick={() => editar(produto)}>
                         Editar
                       </button>
+                      <button type="button" onClick={() => setProdutoPecas(produto)}>
+                        Peças
+                      </button>
                       <button type="button" onClick={() => alternarAtivo(produto)}>
                         {produto.ativo ? 'Desativar' : 'Reativar'}
                       </button>
@@ -211,6 +216,10 @@ export function ProdutosPage() {
           </div>
         )}
       </section>
+
+      {produtoPecas && (
+        <ProdutoPecasModal produto={produtoPecas} onFechar={() => setProdutoPecas(null)} />
+      )}
     </div>
   )
 }

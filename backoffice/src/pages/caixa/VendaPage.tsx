@@ -6,6 +6,7 @@ import { useRelogio } from '../../lib/useRelogio'
 import { SeletorModal } from '../../components/caixa/SeletorModal'
 import { TerminalFrame } from '../../components/caixa/TerminalFrame'
 import { PedidoA4 } from '../../components/PedidoA4'
+import { gerarPdfPedido } from '../../lib/pdfPedido'
 import logoCustomiza from '../../assets/logo-customiza.png'
 import type { ItemCarrinho, Operador, Produto } from '../../types'
 
@@ -287,6 +288,23 @@ export function VendaPage({ operador }: Props) {
     setImpressao({ mostrarValores })
   }
 
+  function baixarPdf(mostrarValores: boolean) {
+    if (!vendaConcluida) return
+    gerarPdfPedido({
+      numeroPedido: vendaConcluida.vendaId.slice(0, 8).toUpperCase(),
+      dataHora: vendaConcluida.dataHora.toLocaleString('pt-BR'),
+      cliente: vendaConcluida.cliente.nome,
+      mostrarValores,
+      itens: vendaConcluida.itens.map((i) => ({
+        nome: i.produto.nome,
+        quantidade: i.quantidade,
+        unidade: i.produto.unidade,
+        precoUnitario: i.produto.preco,
+      })),
+      total: vendaConcluida.itens.reduce((soma, i) => soma + i.quantidade * i.produto.preco, 0),
+    })
+  }
+
   if (vendaConcluida) {
     return (
       <TerminalFrame titulo="VENDA REGISTRADA">
@@ -301,6 +319,9 @@ export function VendaPage({ operador }: Props) {
               <button type="button" onClick={() => imprimir(false)}>
                 Imprimir pedido
               </button>
+              <button type="button" onClick={() => baixarPdf(false)}>
+                Baixar PDF
+              </button>
               <button type="button" onClick={novaVenda}>
                 Nova venda
               </button>
@@ -313,6 +334,12 @@ export function VendaPage({ operador }: Props) {
                 </button>
                 <button type="button" onClick={() => imprimir(false)}>
                   Imprimir só itens
+                </button>
+                <button type="button" onClick={() => baixarPdf(true)}>
+                  Baixar PDF com valores
+                </button>
+                <button type="button" onClick={() => baixarPdf(false)}>
+                  Baixar PDF só itens
                 </button>
               </div>
               <button type="button" onClick={novaVenda}>

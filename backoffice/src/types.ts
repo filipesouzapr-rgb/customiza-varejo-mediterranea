@@ -149,3 +149,27 @@ export interface ContaPagar {
   status: 'nao_conciliado' | 'conciliado'
   regra_id: string | null
 }
+
+export interface ProdutoPeca {
+  id: string
+  produto_id: string
+  nome: string
+  quantidade_no_conjunto: number
+  ativo: boolean
+}
+
+export type MotivoQuebra = 'quebra' | 'estorno' | 'defeito' | 'outro'
+export type StatusQuebra = 'pendente' | 'pedido' | 'recebido'
+
+export interface QuebraPeca {
+  id: string
+  produto_id: string
+  peca_id: string
+  quantidade: number
+  motivo: MotivoQuebra | null
+  data_ocorrencia: string
+  status: StatusQuebra
+  pedido_em: string | null
+  recebido_em: string | null
+  criado_em: string
+}

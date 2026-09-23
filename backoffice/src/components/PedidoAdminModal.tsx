@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { SeletorModal } from './caixa/SeletorModal'
+import { gerarPdfPedido } from '../lib/pdfPedido'
 import type { FormaPagamento, Produto, UnidadeProduto } from '../types'
 
 interface Props {
@@ -340,6 +341,24 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     onAtualizado()
   }
 
+  function baixarPdf() {
+    gerarPdfPedido({
+      numeroPedido: vendaId.slice(0, 8).toUpperCase(),
+      dataHora: dataVendaInput
+        ? new Date(deDatetimeLocal(dataVendaInput)).toLocaleString('pt-BR')
+        : '—',
+      cliente: clienteNome,
+      mostrarValores: true,
+      itens: itens.map((i) => ({
+        nome: i.nome,
+        quantidade: Number(i.quantidade) || 0,
+        unidade: i.unidade,
+        precoUnitario: Number(i.preco_unitario) || 0,
+      })),
+      total: totalAtual,
+    })
+  }
+
   const podeEditar = status === 'finalizada'
   const podeCancelar = status === 'finalizada'
   const podeReativar = status === 'cancelada'
@@ -545,6 +564,9 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
           </div>
 
             <div className="modal-acoes pedido-admin-rodape">
+              <button type="button" onClick={baixarPdf}>
+                Baixar PDF
+              </button>
               {podeCancelar && (
                 <button type="button" onClick={cancelarPedido} disabled={salvando}>
                   Cancelar pedido

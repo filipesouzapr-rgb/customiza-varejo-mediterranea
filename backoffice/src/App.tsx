@@ -8,6 +8,7 @@ import { FiadoPage } from './pages/FiadoPage'
 import { VendasPage } from './pages/VendasPage'
 import { ContasPagarPage } from './pages/ContasPagarPage'
 import { ParametrosPage } from './pages/ParametrosPage'
+import { QuebrasPage } from './pages/QuebrasPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CaixaApp, SemAcesso } from './pages/caixa/CaixaApp'
 import { useSession } from './lib/useSession'
@@ -50,6 +51,7 @@ function App() {
         <Route path="/vendas" element={<VendasPage />} />
         <Route path="/fiado" element={<FiadoPage />} />
         <Route path="/contas-pagar" element={<ContasPagarPage />} />
+        <Route path="/quebras" element={<QuebrasPage />} />
         <Route path="/parametros" element={<ParametrosPage />} />
       </Route>
       <Route path="/" element={<Navigate to={rotaInicial} replace />} />
