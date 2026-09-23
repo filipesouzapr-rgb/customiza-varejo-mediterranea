@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { ProdutoPecasModal } from '../components/ProdutoPecasModal'
+import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
 import type { Produto, UnidadeProduto } from '../types'
 
 const formVazio = {
@@ -89,6 +90,29 @@ export function ProdutosPage() {
     carregarProdutos()
   }
 
+  function gerarRelatorioEstoque() {
+    gerarPdfRelatorio({
+      titulo: 'Relatório de estoque (balanço)',
+      slug: 'estoque',
+      colunas: ['Nome', 'Código', 'Estoque (sistema)', 'Contagem física'],
+      linhas: produtos.map((p) => [p.nome, p.codigo_interno, String(p.estoque_atual), '']),
+    })
+  }
+
+  function gerarRelatorioProdutos() {
+    gerarPdfRelatorio({
+      titulo: 'Relatório de produtos (catálogo)',
+      slug: 'produtos',
+      colunas: ['Nome', 'Código', 'Preço', 'Categoria'],
+      linhas: produtos.map((p) => [
+        p.nome,
+        p.codigo_interno,
+        p.preco.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+        p.categoria ?? '—',
+      ]),
+    })
+  }
+
   return (
     <div className="produtos-page">
       <section className="produtos-form">
@@ -162,7 +186,17 @@ export function ProdutosPage() {
       </section>
 
       <section className="produtos-lista">
-        <h2>Produtos cadastrados</h2>
+        <div className="clientes-lista-cabecalho">
+          <h2>Produtos cadastrados</h2>
+          <div className="produtos-form-acoes">
+            <button type="button" onClick={gerarRelatorioEstoque}>
+              Gerar PDF de estoque (balanço)
+            </button>
+            <button type="button" onClick={gerarRelatorioProdutos}>
+              Gerar PDF de produtos (catálogo)
+            </button>
+          </div>
+        </div>
         {erro && <p className="erro">{erro}</p>}
         {carregando ? (
           <p>Carregando...</p>

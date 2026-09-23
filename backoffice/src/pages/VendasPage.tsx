@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
+import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
 import type { FormaPagamento } from '../types'
 
 interface VendaLinha {
@@ -121,6 +122,21 @@ export function VendasPage() {
     return (v.cliente_nome ?? '').toLowerCase().includes(q)
   })
 
+  function gerarRelatorioVendas() {
+    gerarPdfRelatorio({
+      titulo: `Relatório de vendas — ${new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(fim + 'T00:00:00').toLocaleDateString('pt-BR')}`,
+      slug: 'vendas',
+      colunas: ['Data', 'Cliente', 'Total', 'Forma', 'Status'],
+      linhas: vendasFiltradas.map((v) => [
+        new Date(v.finalizada_em).toLocaleString('pt-BR'),
+        v.cliente_nome ?? '—',
+        moeda(v.total),
+        rotuloFormas(v.formas_pagamento),
+        v.status === 'cancelada' ? 'Cancelada' : 'Finalizada',
+      ]),
+    })
+  }
+
   const totalPeriodo = vendasFiltradas
     .filter((v) => v.status === 'finalizada')
     .reduce((soma, v) => soma + v.total, 0)
@@ -149,6 +165,10 @@ export function VendasPage() {
             />
           </label>
         </div>
+
+        <button type="button" onClick={gerarRelatorioVendas}>
+          Gerar PDF do período
+        </button>
 
         <div className="dashboard-cards">
           <div className="dashboard-card">

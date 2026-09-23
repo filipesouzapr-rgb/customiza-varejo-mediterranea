@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
-import type { Cliente } from '../types'
+import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
+import type { Cliente, SaldoFiadoCliente } from '../types'
 
 const formVazio = {
   id: null as string | null,
@@ -94,6 +95,24 @@ export function ClientesPage() {
     carregarClientes()
   }
 
+  async function gerarRelatorioClientes() {
+    const { data } = await supabase.from('fiado_saldo_por_cliente').select('*')
+    const saldos = new Map(
+      ((data as SaldoFiadoCliente[]) ?? []).map((s) => [s.cliente_id, s.saldo_em_aberto]),
+    )
+
+    gerarPdfRelatorio({
+      titulo: 'Relatório de clientes',
+      slug: 'clientes',
+      colunas: ['Nome', 'Contato', 'Saldo fiado em aberto'],
+      linhas: clientes.map((c) => [
+        c.nome,
+        c.telefone ?? c.cpf ?? '—',
+        (saldos.get(c.id) ?? 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
+      ]),
+    })
+  }
+
   return (
     <div className="clientes-page">
       <section className="clientes-form">
@@ -162,6 +181,9 @@ export function ClientesPage() {
       <section className="clientes-lista">
         <div className="clientes-lista-cabecalho">
           <h2>Clientes cadastrados</h2>
+          <button type="button" onClick={gerarRelatorioClientes}>
+            Gerar PDF
+          </button>
           <label className="clientes-filtro">
             Mostrar
             <select
