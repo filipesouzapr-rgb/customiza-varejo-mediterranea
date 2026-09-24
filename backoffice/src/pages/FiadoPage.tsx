@@ -22,6 +22,30 @@ function trintaDiasAtras() {
   return dataISO(d)
 }
 
+type FormaQuitacao = 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix'
+
+const rotuloFormaQuitacao: Record<FormaQuitacao, string> = {
+  dinheiro: 'Dinheiro',
+  cartao_debito: 'Cartão débito',
+  cartao_credito: 'Cartão crédito',
+  pix: 'Pix',
+}
+
+interface VendaFiadoAberta {
+  id: string
+  finalizada_em: string
+  total: number
+  emAberto: number
+}
+
+interface VendaFiadoRaw {
+  id: string
+  total: number
+  finalizada_em: string
+  venda_pagamentos: { forma: string; valor: number }[] | null
+  fiado_pagamento_vendas: { valor: number }[] | null
+}
+
 interface PedidoPendenteRaw {
   id: string
   total: number
@@ -44,7 +68,9 @@ export function FiadoPage() {
   const [pagamentos, setPagamentos] = useState<FiadoPagamento[]>([])
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false)
 
-  const [valorPagamento, setValorPagamento] = useState('')
+  const [vendasAbertas, setVendasAbertas] = useState<VendaFiadoAberta[]>([])
+  const [alocacoes, setAlocacoes] = useState<Record<string, string>>({})
+  const [formaPagamento, setFormaPagamento] = useState<FormaQuitacao>('pix')
   const [observacoes, setObservacoes] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -121,6 +147,31 @@ export function FiadoPage() {
     if (errPag) setErro(errPag.message)
     else setPagamentos((pagamentosData as FiadoPagamento[]) ?? [])
 
+    const { data: abertasData } = await supabase
+      .from('vendas')
+      .select('id, total, finalizada_em, venda_pagamentos(forma, valor), fiado_pagamento_vendas(valor)')
+      .eq('cliente_id', cliente.cliente_id)
+      .eq('status', 'finalizada')
+      .order('finalizada_em', { ascending: true })
+
+    setVendasAbertas(
+      ((abertasData ?? []) as unknown as VendaFiadoRaw[])
+        .map((v) => {
+          const fiado = (v.venda_pagamentos ?? [])
+            .filter((p) => p.forma === 'fiado')
+            .reduce((soma, p) => soma + Number(p.valor), 0)
+          const quitado = (v.fiado_pagamento_vendas ?? []).reduce((soma, q) => soma + Number(q.valor), 0)
+          return {
+            id: v.id,
+            total: v.total,
+            finalizada_em: v.finalizada_em,
+            emAberto: Math.round((fiado - quitado) * 100) / 100,
+          }
+        })
+        .filter((v) => v.emAberto > 0),
+    )
+    setAlocacoes({})
+
     setCarregandoDetalhe(false)
   }
 
@@ -133,20 +184,22 @@ export function FiadoPage() {
     event.preventDefault()
     if (!clienteSelecionado) return
 
-    const valor = Number(valorPagamento)
-    if (!valor || valor <= 0) return
+    const lista = Object.entries(alocacoes)
+      .map(([venda_id, valor]) => ({ venda_id, valor: Number(valor) }))
+      .filter((a) => a.valor > 0)
+    if (lista.length === 0) {
+      setErro('Informe o valor a quitar em ao menos uma venda.')
+      return
+    }
 
     setSalvando(true)
     setErro(null)
 
-    const { data: sessao } = await supabase.auth.getSession()
-    const operadorId = sessao.session?.user.id
-
-    const { error } = await supabase.from('fiado_pagamentos').insert({
-      cliente_id: clienteSelecionado.cliente_id,
-      valor,
-      recebido_por: operadorId,
-      observacoes: observacoes.trim() === '' ? null : observacoes.trim(),
+    const { error } = await supabase.rpc('registrar_pagamento_fiado', {
+      p_cliente_id: clienteSelecionado.cliente_id,
+      p_forma: formaPagamento,
+      p_observacoes: observacoes.trim() === '' ? null : observacoes.trim(),
+      p_alocacoes: lista,
     })
 
     setSalvando(false)
@@ -156,7 +209,6 @@ export function FiadoPage() {
       return
     }
 
-    setValorPagamento('')
     setObservacoes('')
     await carregarClientes()
     await carregarDetalhe(clienteSelecionado)
@@ -318,23 +370,66 @@ export function FiadoPage() {
           <h3>Registrar pagamento</h3>
           <form onSubmit={handleSubmitPagamento} className="fiado-form-pagamento">
             <label>
-              Valor
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max={clienteSelecionado.saldo_em_aberto}
-                value={valorPagamento}
-                onChange={(e) => setValorPagamento(e.target.value)}
+              Forma de pagamento
+              <select
+                value={formaPagamento}
+                onChange={(e) => setFormaPagamento(e.target.value as FormaQuitacao)}
                 required
-              />
+              >
+                {(Object.keys(rotuloFormaQuitacao) as FormaQuitacao[]).map((forma) => (
+                  <option key={forma} value={forma}>
+                    {rotuloFormaQuitacao[forma]}
+                  </option>
+                ))}
+              </select>
             </label>
+
+            <div className="tabela-scroll">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Venda</th>
+                    <th>Em aberto</th>
+                    <th>Quitar agora</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {vendasAbertas.map((v) => (
+                    <tr key={v.id}>
+                      <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
+                      <td>{moeda(v.emAberto)}</td>
+                      <td>
+                        <input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          max={v.emAberto}
+                          value={alocacoes[v.id] ?? ''}
+                          onChange={(e) => setAlocacoes({ ...alocacoes, [v.id]: e.target.value })}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  {vendasAbertas.length === 0 && (
+                    <tr>
+                      <td colSpan={3}>Nenhuma venda fiado em aberto.</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
             <button
               type="button"
-              onClick={() => setValorPagamento(String(clienteSelecionado.saldo_em_aberto))}
+              onClick={() =>
+                setAlocacoes(Object.fromEntries(vendasAbertas.map((v) => [v.id, String(v.emAberto)])))
+              }
             >
               Preencher saldo total
             </button>
+            <p>
+              Total a registrar:{' '}
+              {moeda(Object.values(alocacoes).reduce((soma, v) => soma + (Number(v) || 0), 0))}
+            </p>
             <label>
               Observações (opcional)
               <input value={observacoes} onChange={(e) => setObservacoes(e.target.value)} />

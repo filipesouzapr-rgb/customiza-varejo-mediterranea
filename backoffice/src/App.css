@@ -511,6 +511,16 @@ tr.inativo {
   color: var(--ink-soft);
 }
 
+.badge-fiado {
+  background: #fff1e0;
+  color: #c2620a;
+}
+
+.badge-pago {
+  background: #eaf7ee;
+  color: var(--green);
+}
+
 .pedido-admin-itens {
   width: 100%;
   border-collapse: collapse;

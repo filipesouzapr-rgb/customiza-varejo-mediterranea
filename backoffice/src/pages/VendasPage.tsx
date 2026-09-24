@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
+import { rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
+import type { SituacaoVenda } from '../lib/situacaoVenda'
 import type { FormaPagamento } from '../types'
 
 interface VendaLinha {
@@ -9,9 +11,10 @@ interface VendaLinha {
   total: number
   finalizada_em: string
   status: 'finalizada' | 'cancelada'
+  situacao: SituacaoVenda
+  forma: string
   cliente_nome: string | null
   operador_nome: string | null
-  formas_pagamento: FormaPagamento[]
 }
 
 interface VendaRaw {
@@ -23,15 +26,15 @@ interface VendaRaw {
   operadores: { nome: string } | null
   // venda_pagamentos.venda_id NAO e unique aqui (conciliacao pode dividir o
   // pagamento em mais de uma forma) - o embed vem como array.
-  venda_pagamentos: { forma: FormaPagamento }[] | null
+  venda_pagamentos: { forma: FormaPagamento; valor: number }[] | null
+  fiado_pagamento_vendas: { valor: number; fiado_pagamentos: { forma: FormaPagamento | null } | null }[] | null
 }
 
-const rotuloForma: Record<FormaPagamento, string> = {
-  dinheiro: 'Dinheiro',
-  cartao_debito: 'Cartão débito',
-  cartao_credito: 'Cartão crédito',
-  pix: 'Pix',
-  fiado: 'Fiado',
+const classeBadge: Record<SituacaoVenda, string> = {
+  cancelada: 'badge-cancelado',
+  pendente: 'badge-pendente',
+  fiado: 'badge-fiado',
+  pago: 'badge-pago',
 }
 
 function moeda(valor: number) {
@@ -50,12 +53,6 @@ function trintaDiasAtras() {
   const d = new Date()
   d.setDate(d.getDate() - 30)
   return dataISO(d)
-}
-
-function rotuloFormas(formas: FormaPagamento[]) {
-  if (formas.length === 0) return '—'
-  if (formas.length === 1) return rotuloForma[formas[0]]
-  return 'Múltiplas formas'
 }
 
 export function VendasPage() {
@@ -83,7 +80,7 @@ export function VendasPage() {
 
     const { data, error } = await supabase
       .from('vendas')
-      .select('id, total, finalizada_em, status, clientes(nome), operadores!operador_id(nome), venda_pagamentos(forma)')
+      .select('id, total, finalizada_em, status, clientes(nome), operadores!operador_id(nome), venda_pagamentos(forma, valor), fiado_pagamento_vendas(valor, fiado_pagamentos(forma))')
       .in('status', ['finalizada', 'cancelada'])
       .gte('finalizada_em', inicio)
       .lte('finalizada_em', fimComHora)
@@ -98,15 +95,27 @@ export function VendasPage() {
     }
 
     setVendas(
-      ((data ?? []) as unknown as VendaRaw[]).map((v) => ({
-        id: v.id,
-        total: v.total,
-        finalizada_em: v.finalizada_em,
-        status: v.status as 'finalizada' | 'cancelada',
-        cliente_nome: v.clientes?.nome ?? null,
-        operador_nome: v.operadores?.nome ?? null,
-        formas_pagamento: (v.venda_pagamentos ?? []).map((p) => p.forma),
-      })),
+      ((data ?? []) as unknown as VendaRaw[]).map((v) => {
+        const status = v.status as 'finalizada' | 'cancelada'
+        const { situacao, forma } = situacaoVenda({
+          status,
+          pagamentos: v.venda_pagamentos ?? [],
+          quitacoes: (v.fiado_pagamento_vendas ?? []).map((q) => ({
+            valor: q.valor,
+            forma: q.fiado_pagamentos?.forma ?? null,
+          })),
+        })
+        return {
+          id: v.id,
+          total: v.total,
+          finalizada_em: v.finalizada_em,
+          status,
+          situacao,
+          forma,
+          cliente_nome: v.clientes?.nome ?? null,
+          operador_nome: v.operadores?.nome ?? null,
+        }
+      }),
     )
     setCarregando(false)
   }
@@ -131,8 +140,8 @@ export function VendasPage() {
         new Date(v.finalizada_em).toLocaleString('pt-BR'),
         v.cliente_nome ?? '—',
         moeda(v.total),
-        rotuloFormas(v.formas_pagamento),
-        v.status === 'cancelada' ? 'Cancelada' : 'Finalizada',
+        v.forma,
+        rotuloSituacao[v.situacao],
       ]),
     })
   }
@@ -201,13 +210,9 @@ export function VendasPage() {
                     <td>{v.cliente_nome ?? '—'}</td>
                     <td>{v.operador_nome ?? '—'}</td>
                     <td>{moeda(v.total)}</td>
-                    <td>{rotuloFormas(v.formas_pagamento)}</td>
+                    <td>{v.forma}</td>
                     <td>
-                      {v.status === 'cancelada' ? (
-                        <span className="badge badge-cancelado">Cancelada</span>
-                      ) : (
-                        <span className="badge badge-conciliado">Finalizada</span>
-                      )}
+                      <span className={`badge ${classeBadge[v.situacao]}`}>{rotuloSituacao[v.situacao]}</span>
                     </td>
                   </tr>
                 ))}
