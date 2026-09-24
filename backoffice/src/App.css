@@ -329,6 +329,24 @@ tr.inativo {
 .fiado-periodo {
   display: flex;
   gap: 16px;
+  align-items: flex-end;
+}
+
+.filtro-situacao {
+  display: flex;
+  gap: 8px;
+}
+
+.filtro-situacao button {
+  background: var(--surface);
+  color: var(--ink-soft);
+  border: 1px solid var(--border);
+}
+
+.filtro-situacao button.ativo {
+  background: var(--blue-primary);
+  color: #fff;
+  border-color: var(--blue-primary);
 }
 
 .fiado-form-pagamento {

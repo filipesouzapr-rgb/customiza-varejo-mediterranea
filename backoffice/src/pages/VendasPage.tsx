@@ -59,6 +59,7 @@ export function VendasPage() {
   const [inicio, setInicio] = useState(trintaDiasAtras())
   const [fim, setFim] = useState(hoje())
   const [buscaCliente, setBuscaCliente] = useState('')
+  const [filtroSituacao, setFiltroSituacao] = useState<'todos' | SituacaoVenda>('todos')
 
   const [vendas, setVendas] = useState<VendaLinha[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -126,6 +127,7 @@ export function VendasPage() {
   }, [inicio, fim])
 
   const vendasFiltradas = vendas.filter((v) => {
+    if (filtroSituacao !== 'todos' && v.situacao !== filtroSituacao) return false
     const q = buscaCliente.trim().toLowerCase()
     if (!q) return true
     return (v.cliente_nome ?? '').toLowerCase().includes(q)
@@ -173,6 +175,25 @@ export function VendasPage() {
               onChange={(e) => setBuscaCliente(e.target.value)}
             />
           </label>
+          <div className="filtro-situacao">
+            {(
+              [
+                ['todos', 'Todos'],
+                ['pago', 'Pago'],
+                ['fiado', 'Fiado'],
+                ['cancelada', 'Cancelado'],
+              ] as const
+            ).map(([valor, rotulo]) => (
+              <button
+                key={valor}
+                type="button"
+                className={filtroSituacao === valor ? 'ativo' : ''}
+                onClick={() => setFiltroSituacao(valor)}
+              >
+                {rotulo}
+              </button>
+            ))}
+          </div>
         </div>
 
         <button type="button" onClick={gerarRelatorioVendas}>
