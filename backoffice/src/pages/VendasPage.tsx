@@ -240,7 +240,13 @@ export function VendasPage() {
                 {vendasFiltradas.map((v) => (
                   <tr key={v.id} className="linha-clicavel" onClick={() => setVendaAberta(v.id)}>
                     <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
-                    <td>{v.dataQuitacao ? dataCurta(v.dataQuitacao) : '—'}</td>
+                    <td>
+                      {v.dataQuitacao
+                        ? dataCurta(v.dataQuitacao)
+                        : v.situacao === 'pago'
+                          ? dataCurta(v.finalizada_em)
+                          : '—'}
+                    </td>
                     <td>{v.cliente_nome ?? '—'}</td>
                     <td>{v.operador_nome ?? '—'}</td>
                     <td>{moeda(v.total)}</td>
