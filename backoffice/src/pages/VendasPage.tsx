@@ -136,7 +136,13 @@ export function VendasPage() {
   }, [inicio, fim])
 
   const vendasFiltradas = vendas.filter((v) => {
-    if (filtroSituacao !== 'todos' && v.situacao !== filtroSituacao) return false
+    // "Todos" nunca inclui canceladas - só aparecem com o filtro "Cancelado"
+    // selecionado explicitamente.
+    if (filtroSituacao === 'todos') {
+      if (v.situacao === 'cancelada') return false
+    } else if (v.situacao !== filtroSituacao) {
+      return false
+    }
     const q = buscaCliente.trim().toLowerCase()
     if (!q) return true
     return (v.cliente_nome ?? '').toLowerCase().includes(q)
@@ -159,9 +165,9 @@ export function VendasPage() {
     })
   }
 
-  const totalPeriodo = vendasFiltradas
-    .filter((v) => v.status === 'finalizada')
-    .reduce((soma, v) => soma + v.total, 0)
+  // vendasFiltradas ja exclui canceladas em "Todos" e so traz canceladas em
+  // "Cancelado" - o total soma exatamente o que a tabela abaixo mostra.
+  const totalPeriodo = vendasFiltradas.reduce((soma, v) => soma + v.total, 0)
 
   return (
     <div className="fiado-page">
