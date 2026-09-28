@@ -224,10 +224,11 @@ export function VendasPage() {
           <p>Carregando...</p>
         ) : (
           <div className="tabela-scroll">
-            <table>
+            <table className="vendas-tabela">
               <thead>
                 <tr>
                   <th>Data</th>
+                  <th>Pagamento</th>
                   <th>Cliente</th>
                   <th>Operador</th>
                   <th>Total</th>
@@ -239,21 +240,19 @@ export function VendasPage() {
                 {vendasFiltradas.map((v) => (
                   <tr key={v.id} className="linha-clicavel" onClick={() => setVendaAberta(v.id)}>
                     <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
+                    <td>{v.dataQuitacao ? dataCurta(v.dataQuitacao) : '—'}</td>
                     <td>{v.cliente_nome ?? '—'}</td>
                     <td>{v.operador_nome ?? '—'}</td>
                     <td>{moeda(v.total)}</td>
                     <td>{v.forma}</td>
                     <td>
                       <span className={`badge ${classeBadge[v.situacao]}`}>{rotuloSituacao[v.situacao]}</span>
-                      {v.dataQuitacao && (
-                        <div className="pago-em-info">Pago em {dataCurta(v.dataQuitacao)}</div>
-                      )}
                     </td>
                   </tr>
                 ))}
                 {vendasFiltradas.length === 0 && (
                   <tr>
-                    <td colSpan={6}>Nenhuma venda no período/filtro selecionado.</td>
+                    <td colSpan={7}>Nenhuma venda no período/filtro selecionado.</td>
                   </tr>
                 )}
               </tbody>

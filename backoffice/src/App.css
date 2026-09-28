@@ -539,11 +539,9 @@ tr.inativo {
   color: var(--green);
 }
 
-.pago-em-info {
-  font-size: 11px;
-  color: var(--ink-soft);
-  margin-top: 3px;
-  white-space: nowrap;
+.vendas-tabela th,
+.vendas-tabela td {
+  padding: 7px 6px;
 }
 
 .pedido-admin-itens {
