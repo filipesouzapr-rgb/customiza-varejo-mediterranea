@@ -215,6 +215,16 @@ tr.inativo {
   opacity: 0.5;
 }
 
+.coluna-ordenavel {
+  cursor: pointer;
+  user-select: none;
+  white-space: nowrap;
+}
+
+.coluna-ordenavel:hover {
+  color: var(--ink);
+}
+
 .produtos-lista-acoes,
 .clientes-lista-acoes {
   display: flex;
