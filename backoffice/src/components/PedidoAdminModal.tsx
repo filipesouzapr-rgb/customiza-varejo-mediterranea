@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { SeletorModal } from './caixa/SeletorModal'
 import { gerarPdfPedido } from '../lib/pdfPedido'
+import { resumoPorCategoria, rotuloQuantidade } from '../lib/resumoCategoria'
 import type { FormaPagamento, Produto, UnidadeProduto } from '../types'
 
 interface Props {
@@ -14,6 +15,7 @@ interface ItemEditavel {
   produto_id: string
   nome: string
   unidade: UnidadeProduto
+  categoria: string | null
   quantidade: string
   preco_unitario: string
 }
@@ -38,7 +40,7 @@ interface ItemRaw {
   produto_id: string
   quantidade: number
   preco_unitario: number
-  produtos: { nome: string; unidade: UnidadeProduto } | null
+  produtos: { nome: string; unidade: UnidadeProduto; categoria: string | null } | null
 }
 
 const rotuloForma: Record<FormaPagamento, string> = {
@@ -107,7 +109,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
           .single(),
         supabase
           .from('venda_itens')
-          .select('produto_id, quantidade, preco_unitario, produtos(nome, unidade)')
+          .select('produto_id, quantidade, preco_unitario, produtos(nome, unidade, categoria)')
           .eq('venda_id', vendaId),
         supabase.from('produtos').select('*').eq('ativo', true),
       ])
@@ -139,6 +141,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
         produto_id: i.produto_id,
         nome: i.produtos?.nome ?? '—',
         unidade: i.produtos?.unidade ?? 'unidade',
+        categoria: i.produtos?.categoria ?? null,
         quantidade: String(i.quantidade),
         preco_unitario: String(i.preco_unitario),
       })),
@@ -191,6 +194,14 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     0,
   )
   const totalAtual = Math.max(0, subtotalAtual - (Number(desconto) || 0))
+  const resumoCategorias = resumoPorCategoria(
+    itens.map((i) => ({
+      categoria: i.categoria,
+      nome: i.nome,
+      unidade: i.unidade,
+      quantidade: Number(i.quantidade) || 0,
+    })),
+  )
   const totalPagoForm = pagamentosForm.reduce((soma, p) => soma + (Number(p.valor) || 0), 0)
   const restanteForm = Math.round((totalAtual - totalPagoForm) * 100) / 100
 
@@ -241,6 +252,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
         produto_id: produto.id,
         nome: produto.nome,
         unidade: produto.unidade,
+        categoria: produto.categoria,
         quantidade: '1',
         preco_unitario: String(produto.preco),
       },
@@ -376,6 +388,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
         precoUnitario: Number(i.preco_unitario) || 0,
       })),
       total: totalAtual,
+      resumoCategorias,
     })
   }
 
@@ -505,6 +518,20 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
               </label>
               <span className="pedido-admin-total-valor">Total: {moeda(totalAtual)}</span>
             </div>
+
+            {resumoCategorias.length > 0 && (
+              <div className="resumo-categorias">
+                <h4>Resumo por categoria</h4>
+                <ul>
+                  {resumoCategorias.map((r) => (
+                    <li key={`${r.rotulo}__${r.unidade}`}>
+                      <span>{r.rotulo}</span>
+                      <span>{rotuloQuantidade(r.quantidade, r.unidade)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
 
             {podeEditar && (
               <div className="modal-acoes">

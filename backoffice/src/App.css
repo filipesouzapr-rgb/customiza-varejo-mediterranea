@@ -578,6 +578,38 @@ tr.inativo {
   font-size: 15px;
 }
 
+.resumo-categorias {
+  background: var(--surface-tint);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 10px 14px;
+}
+
+.resumo-categorias h4 {
+  margin: 0 0 6px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.resumo-categorias ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.resumo-categorias li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
 .pedido-admin-pagamento-linha {
   display: flex;
   gap: 8px;

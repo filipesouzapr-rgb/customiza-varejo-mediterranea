@@ -1,6 +1,8 @@
 import jsPDF from 'jspdf'
 import autoTable from 'jspdf-autotable'
 import { NOME_ESTABELECIMENTO } from './config'
+import { rotuloQuantidade } from './resumoCategoria'
+import type { LinhaResumoCategoria } from './resumoCategoria'
 import type { UnidadeProduto } from '../types'
 
 export interface ItemPedidoPdf {
@@ -17,6 +19,7 @@ interface GerarPdfPedidoParams {
   itens: ItemPedidoPdf[]
   mostrarValores: boolean
   total?: number
+  resumoCategorias?: LinhaResumoCategoria[]
 }
 
 function moeda(valor: number) {
@@ -34,6 +37,7 @@ export function gerarPdfPedido({
   itens,
   mostrarValores,
   total,
+  resumoCategorias,
 }: GerarPdfPedidoParams) {
   const doc = new jsPDF()
 
@@ -64,7 +68,21 @@ export function gerarPdfPedido({
   })
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const finalY = (doc as any).lastAutoTable.finalY ?? 38
+  let finalY = (doc as any).lastAutoTable.finalY ?? 38
+
+  if (resumoCategorias && resumoCategorias.length > 0) {
+    doc.setFontSize(11)
+    doc.text('Resumo por categoria', 14, finalY + 10)
+    autoTable(doc, {
+      startY: finalY + 14,
+      head: [['Categoria', 'Quantidade']],
+      body: resumoCategorias.map((r) => [r.rotulo, rotuloQuantidade(r.quantidade, r.unidade)]),
+      styles: { fontSize: 10 },
+      headStyles: { fillColor: [60, 60, 60] },
+    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    finalY = (doc as any).lastAutoTable.finalY ?? finalY
+  }
 
   doc.setFontSize(11)
   if (mostrarValores && total !== undefined) {
