@@ -5,6 +5,7 @@ export type SituacaoVenda = 'cancelada' | 'pendente' | 'fiado' | 'pago'
 export interface QuitacaoVenda {
   valor: number
   forma: FormaPagamento | null
+  pago_em: string
 }
 
 interface EntradaSituacao {
@@ -43,11 +44,11 @@ export function situacaoVenda({ status, pagamentos, quitacoes }: EntradaSituacao
   const formasVenda = pagamentos.map((p) => p.forma)
 
   if (status === 'cancelada') {
-    return { situacao: 'cancelada' as SituacaoVenda, forma: rotuloFormas(formasVenda) }
+    return { situacao: 'cancelada' as SituacaoVenda, forma: rotuloFormas(formasVenda), dataQuitacao: null }
   }
 
   if (pagamentos.length === 0) {
-    return { situacao: 'pendente' as SituacaoVenda, forma: '—' }
+    return { situacao: 'pendente' as SituacaoVenda, forma: '—', dataQuitacao: null }
   }
 
   const fiadoTotal = pagamentos
@@ -55,21 +56,37 @@ export function situacaoVenda({ status, pagamentos, quitacoes }: EntradaSituacao
     .reduce((soma, p) => soma + Number(p.valor), 0)
 
   if (fiadoTotal === 0) {
-    return { situacao: 'pago' as SituacaoVenda, forma: rotuloFormas(formasVenda) }
+    return { situacao: 'pago' as SituacaoVenda, forma: rotuloFormas(formasVenda), dataQuitacao: null }
   }
 
   const quitado = quitacoes.reduce((soma, q) => soma + Number(q.valor), 0)
 
   if (quitado + 0.005 < fiadoTotal) {
-    return { situacao: 'fiado' as SituacaoVenda, forma: rotuloFormas(formasVenda) }
+    return { situacao: 'fiado' as SituacaoVenda, forma: rotuloFormas(formasVenda), dataQuitacao: null }
   }
 
   const formasFinais = [
     ...formasVenda.filter((f) => f !== 'fiado'),
     ...quitacoes.map((q) => q.forma).filter((f): f is FormaPagamento => f !== null),
   ]
+
+  // Data que "completou" a quitacao: soma as quitacoes em ordem cronologica
+  // e pega a data da primeira que faz o acumulado cobrir o fiado inteiro -
+  // relevante quando o fiado foi pago em mais de uma etapa (parcial).
+  const ordenadas = [...quitacoes].sort((a, b) => a.pago_em.localeCompare(b.pago_em))
+  let acumulado = 0
+  let dataQuitacao: string | null = null
+  for (const q of ordenadas) {
+    acumulado += Number(q.valor)
+    if (acumulado + 0.005 >= fiadoTotal) {
+      dataQuitacao = q.pago_em
+      break
+    }
+  }
+
   return {
     situacao: 'pago' as SituacaoVenda,
     forma: formasFinais.length === 0 ? 'Não informada' : rotuloFormas(formasFinais),
+    dataQuitacao,
   }
 }

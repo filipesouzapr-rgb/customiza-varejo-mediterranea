@@ -82,6 +82,9 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     { forma: FormaPagamento; valor: number }[]
   >([])
   const [pagamentosForm, setPagamentosForm] = useState<PagamentoForm[]>([])
+  const [historicoQuitacoes, setHistoricoQuitacoes] = useState<
+    { valor: number; forma: FormaPagamento | null; pago_em: string }[]
+  >([])
 
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [buscandoProduto, setBuscandoProduto] = useState(false)
@@ -157,6 +160,23 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     } else {
       setPagamentosForm([{ forma: 'dinheiro', valor: String(vendaDetalhe.total) }])
     }
+
+    const { data: quitacoes } = await supabase
+      .from('fiado_pagamento_vendas')
+      .select('valor, fiado_pagamentos(forma, pago_em)')
+      .eq('venda_id', vendaId)
+    setHistoricoQuitacoes(
+      (
+        (quitacoes ?? []) as unknown as {
+          valor: number
+          fiado_pagamentos: { forma: FormaPagamento | null; pago_em: string } | null
+        }[]
+      ).map((q) => ({
+        valor: q.valor,
+        forma: q.fiado_pagamentos?.forma ?? null,
+        pago_em: q.fiado_pagamentos?.pago_em ?? '',
+      })),
+    )
 
     setCarregando(false)
   }
@@ -559,6 +579,25 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
                     Editar itens/desconto reajusta esses valores proporcionalmente ao novo total.
                   </p>
                 )}
+              </>
+            )}
+
+            {historicoQuitacoes.length > 0 && (
+              <>
+                <hr className="cliente-rule" />
+                <h3>Histórico de pagamentos</h3>
+                <ul className="venda-pagamentos-lista">
+                  {historicoQuitacoes.map((q, i) => (
+                    <li key={i}>
+                      <span>
+                        {q.pago_em ? new Date(q.pago_em).toLocaleDateString('pt-BR') : '—'}
+                        {' · '}
+                        {q.forma ? rotuloForma[q.forma] : '—'}
+                      </span>
+                      <span>{moeda(q.valor)}</span>
+                    </li>
+                  ))}
+                </ul>
               </>
             )}
           </div>

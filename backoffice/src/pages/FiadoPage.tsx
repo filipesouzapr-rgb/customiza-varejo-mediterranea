@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
-import type { FiadoPagamento, PedidoPendente, SaldoFiadoCliente, VendaResumo } from '../types'
+import type { PedidoPendente, SaldoFiadoCliente, VendaResumo } from '../types'
 
 function moeda(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -46,6 +46,27 @@ interface VendaFiadoRaw {
   fiado_pagamento_vendas: { valor: number }[] | null
 }
 
+interface QuitacaoDoPagamento {
+  valor: number
+  venda_finalizada_em: string | null
+}
+
+interface PagamentoLinha {
+  id: string
+  valor: number
+  pago_em: string
+  observacoes: string | null
+  quitacoes: QuitacaoDoPagamento[]
+}
+
+interface PagamentoRaw {
+  id: string
+  valor: number
+  pago_em: string
+  observacoes: string | null
+  fiado_pagamento_vendas: { valor: number; vendas: { finalizada_em: string } | null }[] | null
+}
+
 interface PedidoPendenteRaw {
   id: string
   total: number
@@ -65,12 +86,13 @@ export function FiadoPage() {
   const [inicio, setInicio] = useState(trintaDiasAtras())
   const [fim, setFim] = useState(hoje())
   const [vendas, setVendas] = useState<VendaResumo[]>([])
-  const [pagamentos, setPagamentos] = useState<FiadoPagamento[]>([])
+  const [pagamentos, setPagamentos] = useState<PagamentoLinha[]>([])
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false)
 
   const [vendasAbertas, setVendasAbertas] = useState<VendaFiadoAberta[]>([])
   const [alocacoes, setAlocacoes] = useState<Record<string, string>>({})
   const [formaPagamento, setFormaPagamento] = useState<FormaQuitacao>('pix')
+  const [dataPagamento, setDataPagamento] = useState(hoje())
   const [observacoes, setObservacoes] = useState('')
   const [salvando, setSalvando] = useState(false)
   const [erro, setErro] = useState<string | null>(null)
@@ -134,7 +156,7 @@ export function FiadoPage() {
           .order('finalizada_em', { ascending: false }),
         supabase
           .from('fiado_pagamentos')
-          .select('id, valor, pago_em, observacoes')
+          .select('id, valor, pago_em, observacoes, fiado_pagamento_vendas(valor, vendas(finalizada_em))')
           .eq('cliente_id', cliente.cliente_id)
           .gte('pago_em', inicio)
           .lte('pago_em', fimComHora)
@@ -145,7 +167,19 @@ export function FiadoPage() {
     else setVendas((vendasData as VendaResumo[]) ?? [])
 
     if (errPag) setErro(errPag.message)
-    else setPagamentos((pagamentosData as FiadoPagamento[]) ?? [])
+    else
+      setPagamentos(
+        ((pagamentosData ?? []) as unknown as PagamentoRaw[]).map((p) => ({
+          id: p.id,
+          valor: p.valor,
+          pago_em: p.pago_em,
+          observacoes: p.observacoes,
+          quitacoes: (p.fiado_pagamento_vendas ?? []).map((q) => ({
+            valor: q.valor,
+            venda_finalizada_em: q.vendas?.finalizada_em ?? null,
+          })),
+        })),
+      )
 
     const { data: abertasData } = await supabase
       .from('vendas')
@@ -191,6 +225,10 @@ export function FiadoPage() {
       setErro('Informe o valor a quitar em ao menos uma venda.')
       return
     }
+    if (dataPagamento > hoje()) {
+      setErro('A data do pagamento não pode ser no futuro.')
+      return
+    }
 
     setSalvando(true)
     setErro(null)
@@ -200,6 +238,10 @@ export function FiadoPage() {
       p_forma: formaPagamento,
       p_observacoes: observacoes.trim() === '' ? null : observacoes.trim(),
       p_alocacoes: lista,
+      // meio-dia UTC pra nao correr risco de virar o dia anterior quando
+      // exibido em horario de Brasilia (meia-noite UTC seria 21h do dia
+      // anterior aqui)
+      p_pago_em: `${dataPagamento}T12:00:00Z`,
     })
 
     setSalvando(false)
@@ -209,6 +251,7 @@ export function FiadoPage() {
       return
     }
 
+    setDataPagamento(hoje())
     setObservacoes('')
     await carregarClientes()
     await carregarDetalhe(clienteSelecionado)
@@ -345,6 +388,7 @@ export function FiadoPage() {
                     <tr>
                       <th>Data</th>
                       <th>Valor</th>
+                      <th>Vendas quitadas</th>
                       <th>Obs.</th>
                     </tr>
                   </thead>
@@ -353,12 +397,24 @@ export function FiadoPage() {
                       <tr key={p.id}>
                         <td>{new Date(p.pago_em).toLocaleString('pt-BR')}</td>
                         <td>{moeda(p.valor)}</td>
+                        <td>
+                          {p.quitacoes.length === 0
+                            ? '—'
+                            : p.quitacoes.map((q, i) => (
+                                <div key={i}>
+                                  {q.venda_finalizada_em
+                                    ? new Date(q.venda_finalizada_em).toLocaleDateString('pt-BR')
+                                    : '—'}
+                                  : {moeda(q.valor)}
+                                </div>
+                              ))}
+                        </td>
                         <td>{p.observacoes ?? '—'}</td>
                       </tr>
                     ))}
                     {pagamentos.length === 0 && (
                       <tr>
-                        <td colSpan={3}>Nenhum pagamento no período.</td>
+                        <td colSpan={4}>Nenhum pagamento no período.</td>
                       </tr>
                     )}
                   </tbody>
@@ -382,6 +438,16 @@ export function FiadoPage() {
                   </option>
                 ))}
               </select>
+            </label>
+            <label>
+              Data do pagamento
+              <input
+                type="date"
+                value={dataPagamento}
+                max={hoje()}
+                onChange={(e) => setDataPagamento(e.target.value)}
+                required
+              />
             </label>
 
             <div className="tabela-scroll">

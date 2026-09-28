@@ -13,6 +13,7 @@ interface VendaLinha {
   status: 'finalizada' | 'cancelada'
   situacao: SituacaoVenda
   forma: string
+  dataQuitacao: string | null
   cliente_nome: string | null
   operador_nome: string | null
 }
@@ -27,7 +28,9 @@ interface VendaRaw {
   // venda_pagamentos.venda_id NAO e unique aqui (conciliacao pode dividir o
   // pagamento em mais de uma forma) - o embed vem como array.
   venda_pagamentos: { forma: FormaPagamento; valor: number }[] | null
-  fiado_pagamento_vendas: { valor: number; fiado_pagamentos: { forma: FormaPagamento | null } | null }[] | null
+  fiado_pagamento_vendas:
+    | { valor: number; fiado_pagamentos: { forma: FormaPagamento | null; pago_em: string } | null }[]
+    | null
 }
 
 const classeBadge: Record<SituacaoVenda, string> = {
@@ -35,6 +38,10 @@ const classeBadge: Record<SituacaoVenda, string> = {
   pendente: 'badge-pendente',
   fiado: 'badge-fiado',
   pago: 'badge-pago',
+}
+
+function dataCurta(iso: string) {
+  return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })
 }
 
 function moeda(valor: number) {
@@ -81,7 +88,7 @@ export function VendasPage() {
 
     const { data, error } = await supabase
       .from('vendas')
-      .select('id, total, finalizada_em, status, clientes(nome), operadores!operador_id(nome), venda_pagamentos(forma, valor), fiado_pagamento_vendas(valor, fiado_pagamentos(forma))')
+      .select('id, total, finalizada_em, status, clientes(nome), operadores!operador_id(nome), venda_pagamentos(forma, valor), fiado_pagamento_vendas(valor, fiado_pagamentos(forma, pago_em))')
       .in('status', ['finalizada', 'cancelada'])
       .gte('finalizada_em', inicio)
       .lte('finalizada_em', fimComHora)
@@ -98,12 +105,13 @@ export function VendasPage() {
     setVendas(
       ((data ?? []) as unknown as VendaRaw[]).map((v) => {
         const status = v.status as 'finalizada' | 'cancelada'
-        const { situacao, forma } = situacaoVenda({
+        const { situacao, forma, dataQuitacao } = situacaoVenda({
           status,
           pagamentos: v.venda_pagamentos ?? [],
           quitacoes: (v.fiado_pagamento_vendas ?? []).map((q) => ({
             valor: q.valor,
             forma: q.fiado_pagamentos?.forma ?? null,
+            pago_em: q.fiado_pagamentos?.pago_em ?? '',
           })),
         })
         return {
@@ -113,6 +121,7 @@ export function VendasPage() {
           status,
           situacao,
           forma,
+          dataQuitacao,
           cliente_nome: v.clientes?.nome ?? null,
           operador_nome: v.operadores?.nome ?? null,
         }
@@ -143,7 +152,9 @@ export function VendasPage() {
         v.cliente_nome ?? '—',
         moeda(v.total),
         v.forma,
-        rotuloSituacao[v.situacao],
+        v.dataQuitacao
+          ? `${rotuloSituacao[v.situacao]} — pago em ${dataCurta(v.dataQuitacao)}`
+          : rotuloSituacao[v.situacao],
       ]),
     })
   }
@@ -234,6 +245,9 @@ export function VendasPage() {
                     <td>{v.forma}</td>
                     <td>
                       <span className={`badge ${classeBadge[v.situacao]}`}>{rotuloSituacao[v.situacao]}</span>
+                      {v.dataQuitacao && (
+                        <div className="pago-em-info">Pago em {dataCurta(v.dataQuitacao)}</div>
+                      )}
                     </td>
                   </tr>
                 ))}

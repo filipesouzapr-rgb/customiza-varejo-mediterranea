@@ -539,6 +539,13 @@ tr.inativo {
   color: var(--green);
 }
 
+.pago-em-info {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
 .pedido-admin-itens {
   width: 100%;
   border-collapse: collapse;
