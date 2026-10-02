@@ -22,6 +22,7 @@ export function ProdutosPage() {
   const [form, setForm] = useState(formVazio)
   const [salvando, setSalvando] = useState(false)
   const [produtoPecas, setProdutoPecas] = useState<Produto | null>(null)
+  const [buscaProduto, setBuscaProduto] = useState('')
 
   async function carregarProdutos() {
     setCarregando(true)
@@ -113,6 +114,10 @@ export function ProdutosPage() {
     })
   }
 
+  const produtosFiltrados = produtos.filter((p) =>
+    p.nome.toLowerCase().includes(buscaProduto.trim().toLowerCase()),
+  )
+
   return (
     <div className="produtos-page">
       <section className="produtos-form">
@@ -197,6 +202,13 @@ export function ProdutosPage() {
             </button>
           </div>
         </div>
+        <input
+          type="text"
+          className="busca-lista"
+          placeholder="Buscar produto pelo nome..."
+          value={buscaProduto}
+          onChange={(e) => setBuscaProduto(e.target.value)}
+        />
         {erro && <p className="erro">{erro}</p>}
         {carregando ? (
           <p>Carregando...</p>
@@ -216,7 +228,7 @@ export function ProdutosPage() {
                 </tr>
               </thead>
               <tbody>
-                {produtos.map((produto) => (
+                {produtosFiltrados.map((produto) => (
                   <tr key={produto.id} className={produto.ativo ? '' : 'inativo'}>
                     <td>{produto.nome}</td>
                     <td>{produto.codigo_interno}</td>
@@ -240,9 +252,13 @@ export function ProdutosPage() {
                     </td>
                   </tr>
                 ))}
-                {produtos.length === 0 && (
+                {produtosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={8}>Nenhum produto cadastrado ainda.</td>
+                    <td colSpan={8}>
+                      {produtos.length === 0
+                        ? 'Nenhum produto cadastrado ainda.'
+                        : 'Nenhum produto encontrado.'}
+                    </td>
                   </tr>
                 )}
               </tbody>

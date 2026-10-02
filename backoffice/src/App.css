@@ -215,6 +215,13 @@ tr.inativo {
   opacity: 0.5;
 }
 
+.busca-lista {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  margin-bottom: 14px;
+}
+
 .coluna-ordenavel {
   cursor: pointer;
   user-select: none;

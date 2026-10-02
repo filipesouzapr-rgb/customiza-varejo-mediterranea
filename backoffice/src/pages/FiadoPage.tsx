@@ -81,6 +81,7 @@ export function FiadoPage() {
 
   const [clientes, setClientes] = useState<SaldoFiadoCliente[]>([])
   const [carregandoClientes, setCarregandoClientes] = useState(true)
+  const [buscaCliente, setBuscaCliente] = useState('')
   const [clienteSelecionado, setClienteSelecionado] = useState<SaldoFiadoCliente | null>(null)
 
   const [inicio, setInicio] = useState(trintaDiasAtras())
@@ -257,6 +258,10 @@ export function FiadoPage() {
     await carregarDetalhe(clienteSelecionado)
   }
 
+  const clientesFiltrados = clientes.filter((c) =>
+    c.nome.toLowerCase().includes(buscaCliente.trim().toLowerCase()),
+  )
+
   return (
     <div className="fiado-page">
       <section className="fiado-pendentes">
@@ -294,6 +299,13 @@ export function FiadoPage() {
 
       <section className="fiado-lista">
         <h2>Clientes com fiado em aberto</h2>
+        <input
+          type="text"
+          className="busca-lista"
+          placeholder="Buscar cliente pelo nome..."
+          value={buscaCliente}
+          onChange={(e) => setBuscaCliente(e.target.value)}
+        />
         {erro && <p className="erro">{erro}</p>}
         {carregandoClientes ? (
           <p>Carregando...</p>
@@ -307,7 +319,7 @@ export function FiadoPage() {
                 </tr>
               </thead>
               <tbody>
-                {clientes.map((c) => (
+                {clientesFiltrados.map((c) => (
                   <tr
                     key={c.cliente_id}
                     className={clienteSelecionado?.cliente_id === c.cliente_id ? 'selecionado' : ''}
@@ -317,9 +329,13 @@ export function FiadoPage() {
                     <td>{moeda(c.saldo_em_aberto)}</td>
                   </tr>
                 ))}
-                {clientes.length === 0 && (
+                {clientesFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={2}>Nenhum cliente com saldo em aberto.</td>
+                    <td colSpan={2}>
+                      {clientes.length === 0
+                        ? 'Nenhum cliente com saldo em aberto.'
+                        : 'Nenhum cliente encontrado.'}
+                    </td>
                   </tr>
                 )}
               </tbody>
