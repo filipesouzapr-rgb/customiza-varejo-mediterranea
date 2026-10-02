@@ -551,6 +551,11 @@ tr.inativo {
   color: #c2620a;
 }
 
+.badge-pago-parcial {
+  background: #e7eefc;
+  color: #2c56b3;
+}
+
 .badge-pago {
   background: #eaf7ee;
   color: var(--green);

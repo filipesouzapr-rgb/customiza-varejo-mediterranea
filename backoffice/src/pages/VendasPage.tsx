@@ -39,6 +39,7 @@ const classeBadge: Record<SituacaoVenda, string> = {
   cancelada: 'badge-cancelado',
   pendente: 'badge-pendente',
   fiado: 'badge-fiado',
+  pago_parcial: 'badge-pago-parcial',
   pago: 'badge-pago',
 }
 
@@ -201,6 +202,7 @@ export function VendasPage() {
               [
                 ['todos', 'Todos'],
                 ['pago', 'Pago'],
+                ['pago_parcial', 'Pago parcial'],
                 ['fiado', 'Fiado'],
                 ['cancelada', 'Cancelado'],
               ] as const

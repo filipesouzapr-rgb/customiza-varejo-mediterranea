@@ -1,6 +1,6 @@
 import type { FormaPagamento } from '../types'
 
-export type SituacaoVenda = 'cancelada' | 'pendente' | 'fiado' | 'pago'
+export type SituacaoVenda = 'cancelada' | 'pendente' | 'fiado' | 'pago_parcial' | 'pago'
 
 export interface QuitacaoVenda {
   valor: number
@@ -26,6 +26,7 @@ export const rotuloSituacao: Record<SituacaoVenda, string> = {
   cancelada: 'Cancelada',
   pendente: 'Pendente',
   fiado: 'Fiado',
+  pago_parcial: 'Pago parcial',
   pago: 'Pago',
 }
 
@@ -80,16 +81,25 @@ export function situacaoVenda({ status, pagamentos, quitacoes }: EntradaSituacao
   const quitado = quitacoes.reduce((soma, q) => soma + Number(q.valor), 0)
 
   if (quitado + 0.005 < fiadoTotal) {
+    // Com alguma quitacao parcial ja registrada, o status vira "pago
+    // parcial" (cor propria) em vez de "fiado" puro. O saldo e' sobre a
+    // parte fiado (nao o total da venda, que pode ter uma parte paga em
+    // outra forma na hora da criacao).
+    if (quitado > 0) {
+      return {
+        situacao: 'pago_parcial' as SituacaoVenda,
+        forma: rotuloFormas(formasVenda),
+        dataQuitacao: null,
+        pagoParcial: quitado,
+        saldoFiado: Math.max(0, fiadoTotal - quitado),
+      }
+    }
     return {
       situacao: 'fiado' as SituacaoVenda,
       forma: rotuloFormas(formasVenda),
       dataQuitacao: null,
-      // so informa quando ja existe algum pagamento parcial registrado pra
-      // essa venda - fiado intocado nao mostra nada embaixo do badge. O
-      // saldo e' sobre a parte fiado (nao o total da venda, que pode ter
-      // uma parte paga em outra forma na hora da criacao).
-      pagoParcial: quitado > 0 ? quitado : null,
-      saldoFiado: quitado > 0 ? Math.max(0, fiadoTotal - quitado) : null,
+      pagoParcial: null,
+      saldoFiado: null,
     }
   }
 
