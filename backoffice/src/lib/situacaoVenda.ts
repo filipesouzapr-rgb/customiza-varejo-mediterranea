@@ -44,11 +44,23 @@ export function situacaoVenda({ status, pagamentos, quitacoes }: EntradaSituacao
   const formasVenda = pagamentos.map((p) => p.forma)
 
   if (status === 'cancelada') {
-    return { situacao: 'cancelada' as SituacaoVenda, forma: rotuloFormas(formasVenda), dataQuitacao: null }
+    return {
+      situacao: 'cancelada' as SituacaoVenda,
+      forma: rotuloFormas(formasVenda),
+      dataQuitacao: null,
+      pagoParcial: null,
+      saldoFiado: null,
+    }
   }
 
   if (pagamentos.length === 0) {
-    return { situacao: 'pendente' as SituacaoVenda, forma: '—', dataQuitacao: null }
+    return {
+      situacao: 'pendente' as SituacaoVenda,
+      forma: '—',
+      dataQuitacao: null,
+      pagoParcial: null,
+      saldoFiado: null,
+    }
   }
 
   const fiadoTotal = pagamentos
@@ -56,13 +68,29 @@ export function situacaoVenda({ status, pagamentos, quitacoes }: EntradaSituacao
     .reduce((soma, p) => soma + Number(p.valor), 0)
 
   if (fiadoTotal === 0) {
-    return { situacao: 'pago' as SituacaoVenda, forma: rotuloFormas(formasVenda), dataQuitacao: null }
+    return {
+      situacao: 'pago' as SituacaoVenda,
+      forma: rotuloFormas(formasVenda),
+      dataQuitacao: null,
+      pagoParcial: null,
+      saldoFiado: null,
+    }
   }
 
   const quitado = quitacoes.reduce((soma, q) => soma + Number(q.valor), 0)
 
   if (quitado + 0.005 < fiadoTotal) {
-    return { situacao: 'fiado' as SituacaoVenda, forma: rotuloFormas(formasVenda), dataQuitacao: null }
+    return {
+      situacao: 'fiado' as SituacaoVenda,
+      forma: rotuloFormas(formasVenda),
+      dataQuitacao: null,
+      // so informa quando ja existe algum pagamento parcial registrado pra
+      // essa venda - fiado intocado nao mostra nada embaixo do badge. O
+      // saldo e' sobre a parte fiado (nao o total da venda, que pode ter
+      // uma parte paga em outra forma na hora da criacao).
+      pagoParcial: quitado > 0 ? quitado : null,
+      saldoFiado: quitado > 0 ? Math.max(0, fiadoTotal - quitado) : null,
+    }
   }
 
   const formasFinais = [
@@ -88,5 +116,7 @@ export function situacaoVenda({ status, pagamentos, quitacoes }: EntradaSituacao
     situacao: 'pago' as SituacaoVenda,
     forma: formasFinais.length === 0 ? 'Não informada' : rotuloFormas(formasFinais),
     dataQuitacao,
+    pagoParcial: null,
+    saldoFiado: null,
   }
 }

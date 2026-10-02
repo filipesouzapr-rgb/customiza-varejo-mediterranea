@@ -14,6 +14,8 @@ interface VendaLinha {
   situacao: SituacaoVenda
   forma: string
   dataQuitacao: string | null
+  pagoParcial: number | null
+  saldoFiado: number | null
   cliente_nome: string | null
   operador_nome: string | null
 }
@@ -105,7 +107,7 @@ export function VendasPage() {
     setVendas(
       ((data ?? []) as unknown as VendaRaw[]).map((v) => {
         const status = v.status as 'finalizada' | 'cancelada'
-        const { situacao, forma, dataQuitacao } = situacaoVenda({
+        const { situacao, forma, dataQuitacao, pagoParcial, saldoFiado } = situacaoVenda({
           status,
           pagamentos: v.venda_pagamentos ?? [],
           quitacoes: (v.fiado_pagamento_vendas ?? []).map((q) => ({
@@ -122,6 +124,8 @@ export function VendasPage() {
           situacao,
           forma,
           dataQuitacao,
+          pagoParcial,
+          saldoFiado,
           cliente_nome: v.clientes?.nome ?? null,
           operador_nome: v.operadores?.nome ?? null,
         }
@@ -259,6 +263,11 @@ export function VendasPage() {
                     <td>{v.forma}</td>
                     <td>
                       <span className={`badge ${classeBadge[v.situacao]}`}>{rotuloSituacao[v.situacao]}</span>
+                      {v.pagoParcial !== null && v.saldoFiado !== null && (
+                        <div className="pago-parcial-info">
+                          {moeda(v.pagoParcial)} pago · saldo {moeda(v.saldoFiado)}
+                        </div>
+                      )}
                     </td>
                   </tr>
                 ))}

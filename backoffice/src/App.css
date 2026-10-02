@@ -561,6 +561,13 @@ tr.inativo {
   padding: 7px 6px;
 }
 
+.pago-parcial-info {
+  font-size: 11px;
+  color: var(--ink-soft);
+  margin-top: 3px;
+  white-space: nowrap;
+}
+
 .pedido-admin-itens {
   width: 100%;
   border-collapse: collapse;
