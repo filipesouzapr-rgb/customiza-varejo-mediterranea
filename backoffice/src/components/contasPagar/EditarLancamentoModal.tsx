@@ -187,6 +187,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
           <p>Carregando...</p>
         ) : (
           <>
+          <div className="pedido-admin-corpo">
             {erro && <p className="erro">{erro}</p>}
 
             <label>
@@ -327,7 +328,9 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
               </p>
             )}
 
-            <div className="modal-acoes">
+          </div>
+
+            <div className="modal-acoes pedido-admin-rodape">
               <button type="button" onClick={onFechar}>
                 Fechar
               </button>
