@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useParamUrl } from '../lib/useParamUrl'
 import { LancamentosTab } from '../components/contasPagar/LancamentosTab'
 import { FornecedoresTab } from '../components/contasPagar/FornecedoresTab'
 import { GruposDespesaTab } from '../components/contasPagar/GruposDespesaTab'
@@ -6,7 +6,9 @@ import { GruposDespesaTab } from '../components/contasPagar/GruposDespesaTab'
 type Aba = 'lancamentos' | 'fornecedores' | 'grupos'
 
 export function ContasPagarPage() {
-  const [aba, setAba] = useState<Aba>('lancamentos')
+  const [abaTexto, setAbaTexto] = useParamUrl('aba', 'lancamentos')
+  const aba = abaTexto as Aba
+  const setAba = setAbaTexto
 
   return (
     <div className="contas-pagar-page">

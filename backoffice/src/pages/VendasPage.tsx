@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
+import { useParamUrl } from '../lib/useParamUrl'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
 import { classeBadgeSituacao, rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
 import type { SituacaoVenda } from '../lib/situacaoVenda'
@@ -58,10 +59,12 @@ function trintaDiasAtras() {
 }
 
 export function VendasPage() {
-  const [inicio, setInicio] = useState(trintaDiasAtras())
-  const [fim, setFim] = useState(hoje())
-  const [buscaCliente, setBuscaCliente] = useState('')
-  const [filtroSituacao, setFiltroSituacao] = useState<'todos' | SituacaoVenda>('todos')
+  const [inicio, setInicio] = useParamUrl('de', trintaDiasAtras())
+  const [fim, setFim] = useParamUrl('ate', hoje())
+  const [buscaCliente, setBuscaCliente] = useParamUrl('q', '')
+  const [situacaoTexto, setSituacaoTexto] = useParamUrl('situacao', 'todos')
+  const filtroSituacao = situacaoTexto as 'todos' | SituacaoVenda
+  const setFiltroSituacao = setSituacaoTexto
 
   const [vendas, setVendas] = useState<VendaLinha[]>([])
   const [carregando, setCarregando] = useState(true)

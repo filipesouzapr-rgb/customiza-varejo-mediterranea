@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
+import { useParamUrl } from '../lib/useParamUrl'
 import type { UnidadeProduto } from '../types'
 
 type Modo = 'produto' | 'categoria'
@@ -48,14 +49,18 @@ function rotuloQtd(quantidade: number, unidade: UnidadeProduto) {
 }
 
 export function RelatorioVendidosPage() {
-  const [inicio, setInicio] = useState(primeiroDiaMes())
-  const [fim, setFim] = useState(hoje())
-  const [busca, setBusca] = useState('')
-  const [modo, setModo] = useState<Modo>('produto')
-  const [ordenacao, setOrdenacao] = useState<{ campo: Campo; direcao: Direcao }>({
-    campo: 'quantidade',
-    direcao: 'desc',
-  })
+  const [inicio, setInicio] = useParamUrl('de', primeiroDiaMes())
+  const [fim, setFim] = useParamUrl('ate', hoje())
+  const [busca, setBusca] = useParamUrl('q', '')
+  const [modoTexto, setModoTexto] = useParamUrl('modo', 'produto')
+  const modo = modoTexto as Modo
+  const setModo = setModoTexto
+  // "campo:direcao" numa unica chave, pra uma troca de ordenacao virar uma so atualizacao de URL
+  const [ordTexto, setOrdTexto] = useParamUrl('ord', 'quantidade:desc')
+  const [campoOrd, direcaoOrd] = ordTexto.split(':')
+  const ordenacao = { campo: campoOrd as Campo, direcao: direcaoOrd as Direcao }
+  const setOrdenacao = (o: { campo: Campo; direcao: Direcao }) =>
+    setOrdTexto(`${o.campo}:${o.direcao}`)
 
   const [itensCarregados, setItensCarregados] = useState<ItemVendaRaw[]>([])
   const [carregando, setCarregando] = useState(true)
@@ -134,9 +139,9 @@ export function RelatorioVendidosPage() {
   const totalValor = linhas.reduce((soma, l) => soma + l.valor, 0)
 
   function alternarOrdenacao(campo: Campo) {
-    setOrdenacao((atual) =>
-      atual.campo === campo
-        ? { campo, direcao: atual.direcao === 'asc' ? 'desc' : 'asc' }
+    setOrdenacao(
+      ordenacao.campo === campo
+        ? { campo, direcao: ordenacao.direcao === 'asc' ? 'desc' : 'asc' }
         : { campo, direcao: 'desc' },
     )
   }

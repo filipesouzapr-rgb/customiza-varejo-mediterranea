@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { ProdutoPecasModal } from '../components/ProdutoPecasModal'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
+import { useParamUrl } from '../lib/useParamUrl'
 import type { Produto, UnidadeProduto } from '../types'
 
 const formVazio = {
@@ -22,7 +23,7 @@ export function ProdutosPage() {
   const [form, setForm] = useState(formVazio)
   const [salvando, setSalvando] = useState(false)
   const [produtoPecas, setProdutoPecas] = useState<Produto | null>(null)
-  const [buscaProduto, setBuscaProduto] = useState('')
+  const [buscaProduto, setBuscaProduto] = useParamUrl('q', '')
 
   async function carregarProdutos() {
     setCarregando(true)

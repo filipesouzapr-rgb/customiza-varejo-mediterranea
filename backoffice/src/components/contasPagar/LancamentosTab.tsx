@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useParamUrl } from '../../lib/useParamUrl'
 import { NovoLancamentoModal } from './NovoLancamentoModal'
 import { EditarLancamentoModal } from './EditarLancamentoModal'
 import type { Fornecedor, GrupoDespesa } from '../../types'
@@ -48,11 +49,13 @@ export function LancamentosTab() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
   const [grupos, setGrupos] = useState<GrupoDespesa[]>([])
 
-  const [filtroInicio, setFiltroInicio] = useState(primeiroDiaMes())
-  const [filtroFim, setFiltroFim] = useState(ultimoDiaMes())
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | 'nao_conciliado' | 'conciliado'>('todos')
-  const [filtroFornecedor, setFiltroFornecedor] = useState('')
-  const [filtroGrupo, setFiltroGrupo] = useState('')
+  const [filtroInicio, setFiltroInicio] = useParamUrl('venc_de', primeiroDiaMes())
+  const [filtroFim, setFiltroFim] = useParamUrl('venc_ate', ultimoDiaMes())
+  const [statusTexto, setStatusTexto] = useParamUrl('status', 'todos')
+  const filtroStatus = statusTexto as 'todos' | 'nao_conciliado' | 'conciliado'
+  const setFiltroStatus = setStatusTexto
+  const [filtroFornecedor, setFiltroFornecedor] = useParamUrl('fornecedor', '')
+  const [filtroGrupo, setFiltroGrupo] = useParamUrl('grupo', '')
 
   const [lista, setLista] = useState<LinhaConta[]>([])
   const [carregando, setCarregando] = useState(true)

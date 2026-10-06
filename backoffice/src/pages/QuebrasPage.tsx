@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
+import { useParamUrl } from '../lib/useParamUrl'
 import type { MotivoQuebra, Produto, ProdutoPeca, StatusQuebra } from '../types'
 
 interface LinhaQuebra {
@@ -52,8 +53,10 @@ export function QuebrasPage() {
   const [salvando, setSalvando] = useState(false)
   const [erroForm, setErroForm] = useState<string | null>(null)
 
-  const [filtroStatus, setFiltroStatus] = useState<'todos' | StatusQuebra>('todos')
-  const [filtroProduto, setFiltroProduto] = useState('')
+  const [statusTexto, setStatusTexto] = useParamUrl('status', 'todos')
+  const filtroStatus = statusTexto as 'todos' | StatusQuebra
+  const setFiltroStatus = setStatusTexto
+  const [filtroProduto, setFiltroProduto] = useParamUrl('produto', '')
 
   const [lista, setLista] = useState<LinhaQuebra[]>([])
   const [carregando, setCarregando] = useState(true)

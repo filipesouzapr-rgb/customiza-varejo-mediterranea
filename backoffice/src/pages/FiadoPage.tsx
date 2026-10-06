@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
+import { useParamUrl } from '../lib/useParamUrl'
 import type { PedidoPendente, SaldoFiadoCliente } from '../types'
 import { classeBadgeSituacao, rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
 import type { SituacaoVenda } from '../lib/situacaoVenda'
@@ -103,11 +104,12 @@ export function FiadoPage() {
 
   const [clientes, setClientes] = useState<SaldoFiadoCliente[]>([])
   const [carregandoClientes, setCarregandoClientes] = useState(true)
-  const [buscaCliente, setBuscaCliente] = useState('')
+  const [buscaCliente, setBuscaCliente] = useParamUrl('q', '')
+  const [clienteIdUrl, setClienteIdUrl] = useParamUrl('cliente', '')
   const [clienteSelecionado, setClienteSelecionado] = useState<SaldoFiadoCliente | null>(null)
 
-  const [inicio, setInicio] = useState(trintaDiasAtras())
-  const [fim, setFim] = useState(hoje())
+  const [inicio, setInicio] = useParamUrl('de', trintaDiasAtras())
+  const [fim, setFim] = useParamUrl('ate', hoje())
   const [vendas, setVendas] = useState<VendaCompra[]>([])
   const [pagamentos, setPagamentos] = useState<PagamentoLinha[]>([])
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false)
@@ -260,6 +262,23 @@ export function FiadoPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inicio, fim])
 
+  // Restaura o cliente que estava selecionado (vem da URL) quando a lista carregar
+  useEffect(() => {
+    if (!clienteIdUrl) {
+      if (clienteSelecionado) setClienteSelecionado(null)
+      return
+    }
+    if (carregandoClientes || clienteSelecionado?.cliente_id === clienteIdUrl) return
+    const encontrado = clientes.find((c) => c.cliente_id === clienteIdUrl)
+    if (encontrado) carregarDetalhe(encontrado)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clienteIdUrl, clientes, carregandoClientes])
+
+  function selecionarCliente(cliente: SaldoFiadoCliente) {
+    setClienteIdUrl(cliente.cliente_id)
+    carregarDetalhe(cliente)
+  }
+
   async function handleSubmitPagamento(event: FormEvent) {
     event.preventDefault()
     if (!clienteSelecionado) return
@@ -368,7 +387,7 @@ export function FiadoPage() {
                   <tr
                     key={c.cliente_id}
                     className={clienteSelecionado?.cliente_id === c.cliente_id ? 'selecionado' : ''}
-                    onClick={() => carregarDetalhe(c)}
+                    onClick={() => selecionarCliente(c)}
                   >
                     <td>{c.nome}</td>
                     <td>{moeda(c.saldo_em_aberto)}</td>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
+import { useParamUrl } from '../lib/useParamUrl'
 import type { Cliente, SaldoFiadoCliente } from '../types'
 
 const formVazio = {
@@ -22,7 +23,9 @@ export function ClientesPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [form, setForm] = useState(formVazio)
   const [salvando, setSalvando] = useState(false)
-  const [filtroRevendedor, setFiltroRevendedor] = useState<FiltroRevendedor>('todos')
+  const [filtroTexto, setFiltroTexto] = useParamUrl('mostrar', 'todos')
+  const filtroRevendedor = filtroTexto as FiltroRevendedor
+  const setFiltroRevendedor = setFiltroTexto
 
   async function carregarClientes() {
     setCarregando(true)
