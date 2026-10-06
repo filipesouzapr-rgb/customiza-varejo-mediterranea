@@ -2,7 +2,29 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
-import type { PedidoPendente, SaldoFiadoCliente, VendaResumo } from '../types'
+import type { PedidoPendente, SaldoFiadoCliente } from '../types'
+import { classeBadgeSituacao, rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
+import type { SituacaoVenda } from '../lib/situacaoVenda'
+import type { FormaPagamento } from '../types'
+
+interface VendaCompra {
+  id: string
+  total: number
+  finalizada_em: string
+  situacao: SituacaoVenda
+  pagoParcial: number | null
+  saldoFiado: number | null
+}
+
+interface VendaCompraRaw {
+  id: string
+  total: number
+  finalizada_em: string
+  venda_pagamentos: { forma: FormaPagamento; valor: number }[] | null
+  fiado_pagamento_vendas:
+    | { valor: number; fiado_pagamentos: { forma: FormaPagamento | null; pago_em: string } | null }[]
+    | null
+}
 
 function moeda(valor: number) {
   return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
@@ -86,7 +108,7 @@ export function FiadoPage() {
 
   const [inicio, setInicio] = useState(trintaDiasAtras())
   const [fim, setFim] = useState(hoje())
-  const [vendas, setVendas] = useState<VendaResumo[]>([])
+  const [vendas, setVendas] = useState<VendaCompra[]>([])
   const [pagamentos, setPagamentos] = useState<PagamentoLinha[]>([])
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false)
 
@@ -149,7 +171,9 @@ export function FiadoPage() {
       await Promise.all([
         supabase
           .from('vendas')
-          .select('id, total, finalizada_em, conciliado_em')
+          .select(
+            'id, total, finalizada_em, venda_pagamentos(forma, valor), fiado_pagamento_vendas(valor, fiado_pagamentos(forma, pago_em))',
+          )
           .eq('cliente_id', cliente.cliente_id)
           .eq('status', 'finalizada')
           .gte('finalizada_em', inicio)
@@ -165,7 +189,28 @@ export function FiadoPage() {
       ])
 
     if (errVendas) setErro(errVendas.message)
-    else setVendas((vendasData as VendaResumo[]) ?? [])
+    else
+      setVendas(
+        ((vendasData ?? []) as unknown as VendaCompraRaw[]).map((v) => {
+          const { situacao, pagoParcial, saldoFiado } = situacaoVenda({
+            status: 'finalizada',
+            pagamentos: v.venda_pagamentos ?? [],
+            quitacoes: (v.fiado_pagamento_vendas ?? []).map((q) => ({
+              valor: q.valor,
+              forma: q.fiado_pagamentos?.forma ?? null,
+              pago_em: q.fiado_pagamentos?.pago_em ?? '',
+            })),
+          })
+          return {
+            id: v.id,
+            total: v.total,
+            finalizada_em: v.finalizada_em,
+            situacao,
+            pagoParcial,
+            saldoFiado,
+          }
+        }),
+      )
 
     if (errPag) setErro(errPag.message)
     else
@@ -380,10 +425,13 @@ export function FiadoPage() {
                         <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
                         <td>{moeda(v.total)}</td>
                         <td>
-                          {v.conciliado_em ? (
-                            <span className="badge badge-conciliado">Conciliado</span>
-                          ) : (
-                            <span className="badge badge-pendente">Pendente</span>
+                          <span className={`badge ${classeBadgeSituacao[v.situacao]}`}>
+                            {rotuloSituacao[v.situacao]}
+                          </span>
+                          {v.pagoParcial !== null && v.saldoFiado !== null && (
+                            <div className="pago-parcial-info">
+                              {moeda(v.pagoParcial)} pago · saldo {moeda(v.saldoFiado)}
+                            </div>
                           )}
                         </td>
                       </tr>

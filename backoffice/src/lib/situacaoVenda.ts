@@ -22,6 +22,14 @@ export const rotuloForma: Record<FormaPagamento, string> = {
   fiado: 'Fiado',
 }
 
+export const classeBadgeSituacao: Record<SituacaoVenda, string> = {
+  cancelada: 'badge-cancelado',
+  pendente: 'badge-pendente',
+  fiado: 'badge-fiado',
+  pago_parcial: 'badge-pago-parcial',
+  pago: 'badge-pago',
+}
+
 export const rotuloSituacao: Record<SituacaoVenda, string> = {
   cancelada: 'Cancelada',
   pendente: 'Pendente',

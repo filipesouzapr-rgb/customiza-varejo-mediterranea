@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
-import { rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
+import { classeBadgeSituacao, rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
 import type { SituacaoVenda } from '../lib/situacaoVenda'
 import type { FormaPagamento } from '../types'
 
@@ -33,14 +33,6 @@ interface VendaRaw {
   fiado_pagamento_vendas:
     | { valor: number; fiado_pagamentos: { forma: FormaPagamento | null; pago_em: string } | null }[]
     | null
-}
-
-const classeBadge: Record<SituacaoVenda, string> = {
-  cancelada: 'badge-cancelado',
-  pendente: 'badge-pendente',
-  fiado: 'badge-fiado',
-  pago_parcial: 'badge-pago-parcial',
-  pago: 'badge-pago',
 }
 
 function dataCurta(iso: string) {
@@ -264,7 +256,7 @@ export function VendasPage() {
                     <td>{moeda(v.total)}</td>
                     <td>{v.forma}</td>
                     <td>
-                      <span className={`badge ${classeBadge[v.situacao]}`}>{rotuloSituacao[v.situacao]}</span>
+                      <span className={`badge ${classeBadgeSituacao[v.situacao]}`}>{rotuloSituacao[v.situacao]}</span>
                       {v.pagoParcial !== null && v.saldoFiado !== null && (
                         <div className="pago-parcial-info">
                           {moeda(v.pagoParcial)} pago · saldo {moeda(v.saldoFiado)}
