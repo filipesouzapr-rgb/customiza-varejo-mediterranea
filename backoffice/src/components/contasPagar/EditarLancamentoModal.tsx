@@ -169,6 +169,23 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
     onFechar()
   }
 
+  async function excluirLancamento() {
+    if (!window.confirm('Excluir este lançamento? Essa ação não pode ser desfeita.')) return
+
+    setErro(null)
+    setSalvando(true)
+
+    const { error } = await supabase.from('contas_pagar').delete().eq('id', contaId)
+
+    setSalvando(false)
+    if (error) {
+      setErro(error.message)
+      return
+    }
+    onAtualizado()
+    onFechar()
+  }
+
   const podeEditar = conta?.status === 'nao_conciliado'
 
   return (
@@ -331,6 +348,11 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
           </div>
 
             <div className="modal-acoes pedido-admin-rodape">
+              {podeEditar && (
+                <button type="button" onClick={excluirLancamento} disabled={salvando}>
+                  Excluir lançamento
+                </button>
+              )}
               <button type="button" onClick={onFechar}>
                 Fechar
               </button>
