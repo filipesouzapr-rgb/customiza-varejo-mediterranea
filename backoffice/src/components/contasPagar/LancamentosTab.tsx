@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase'
 import { useParamUrl } from '../../lib/useParamUrl'
 import { NovoLancamentoModal } from './NovoLancamentoModal'
 import { EditarLancamentoModal } from './EditarLancamentoModal'
-import type { Fornecedor, GrupoDespesa } from '../../types'
+import type { ContaPagamento, Fornecedor, GrupoDespesa } from '../../types'
 
 interface LinhaConta {
   id: string
@@ -48,6 +48,7 @@ function ultimoDiaMes() {
 export function LancamentosTab() {
   const [fornecedores, setFornecedores] = useState<Fornecedor[]>([])
   const [grupos, setGrupos] = useState<GrupoDespesa[]>([])
+  const [contasPagamento, setContasPagamento] = useState<ContaPagamento[]>([])
 
   const [filtroInicio, setFiltroInicio] = useParamUrl('venc_de', primeiroDiaMes())
   const [filtroFim, setFiltroFim] = useParamUrl('venc_ate', ultimoDiaMes())
@@ -68,12 +69,14 @@ export function LancamentosTab() {
   const [contaAberta, setContaAberta] = useState<string | null>(null)
 
   async function carregarCadastros() {
-    const [{ data: forn }, { data: grup }] = await Promise.all([
+    const [{ data: forn }, { data: grup }, { data: contasPag }] = await Promise.all([
       supabase.from('fornecedores').select('*').eq('ativo', true).order('nome'),
       supabase.from('grupos_despesa').select('*').eq('ativo', true).order('nome'),
+      supabase.from('contas_pagamento').select('*').eq('ativo', true).order('nome'),
     ])
     setFornecedores((forn as Fornecedor[]) ?? [])
     setGrupos((grup as GrupoDespesa[]) ?? [])
+    setContasPagamento((contasPag as ContaPagamento[]) ?? [])
   }
 
   async function carregarEmAtraso() {
@@ -280,6 +283,7 @@ export function LancamentosTab() {
           contaId={contaAberta}
           fornecedores={fornecedores}
           grupos={grupos}
+          contasPagamento={contasPagamento}
           onFechar={() => setContaAberta(null)}
           onAtualizado={recarregarTudo}
         />

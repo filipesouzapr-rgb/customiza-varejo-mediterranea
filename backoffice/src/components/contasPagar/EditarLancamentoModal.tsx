@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../lib/supabase'
 import type {
+  ContaPagamento,
   ContaPagarRegra,
   Fornecedor,
   FormaPagamentoContasPagar,
@@ -11,6 +12,7 @@ interface Props {
   contaId: string
   fornecedores: Fornecedor[]
   grupos: GrupoDespesa[]
+  contasPagamento: ContaPagamento[]
   onFechar: () => void
   onAtualizado: () => void
 }
@@ -46,7 +48,14 @@ function hoje() {
   return new Date().toISOString().slice(0, 10)
 }
 
-export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar, onAtualizado }: Props) {
+export function EditarLancamentoModal({
+  contaId,
+  fornecedores,
+  grupos,
+  contasPagamento,
+  onFechar,
+  onAtualizado,
+}: Props) {
   const [carregando, setCarregando] = useState(true)
   const [erro, setErro] = useState<string | null>(null)
   const [salvando, setSalvando] = useState(false)
@@ -64,6 +73,7 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
 
   const [dataPagamento, setDataPagamento] = useState(hoje())
   const [formaPagamento, setFormaPagamento] = useState<FormaPagamentoContasPagar>('dinheiro')
+  const [contaPagamentoId, setContaPagamentoId] = useState('')
 
   async function carregar() {
     setCarregando(true)
@@ -155,10 +165,12 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
     setErro(null)
     setSalvando(true)
 
-    const { error } = await supabase
-      .from('contas_pagar')
-      .update({ status: 'conciliado', data_pagamento: dataPagamento, forma_pagamento: formaPagamento })
-      .eq('id', contaId)
+    const { error } = await supabase.rpc('confirmar_pagamento_contas_pagar', {
+      p_conta_id: contaId,
+      p_data_pagamento: dataPagamento,
+      p_forma_pagamento: formaPagamento,
+      p_conta_pagamento_id: contaPagamentoId || null,
+    })
 
     setSalvando(false)
     if (error) {
@@ -323,6 +335,17 @@ export function EditarLancamentoModal({ contaId, fornecedores, grupos, onFechar,
                     {(Object.keys(rotuloForma) as FormaPagamentoContasPagar[]).map((forma) => (
                       <option key={forma} value={forma}>
                         {rotuloForma[forma]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label>
+                  Conta de pagamento (opcional)
+                  <select value={contaPagamentoId} onChange={(e) => setContaPagamentoId(e.target.value)}>
+                    <option value="">— nenhuma —</option>
+                    {contasPagamento.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.nome}
                       </option>
                     ))}
                   </select>

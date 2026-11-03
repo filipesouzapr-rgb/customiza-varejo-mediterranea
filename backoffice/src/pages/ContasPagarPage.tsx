@@ -2,8 +2,9 @@ import { useParamUrl } from '../lib/useParamUrl'
 import { LancamentosTab } from '../components/contasPagar/LancamentosTab'
 import { FornecedoresTab } from '../components/contasPagar/FornecedoresTab'
 import { GruposDespesaTab } from '../components/contasPagar/GruposDespesaTab'
+import { ContasPagamentoTab } from '../components/contasPagar/ContasPagamentoTab'
 
-type Aba = 'lancamentos' | 'fornecedores' | 'grupos'
+type Aba = 'lancamentos' | 'fornecedores' | 'grupos' | 'contas_pagamento'
 
 export function ContasPagarPage() {
   const [abaTexto, setAbaTexto] = useParamUrl('aba', 'lancamentos')
@@ -34,11 +35,19 @@ export function ContasPagarPage() {
         >
           Grupos de despesa
         </button>
+        <button
+          type="button"
+          className={aba === 'contas_pagamento' ? 'ativa' : ''}
+          onClick={() => setAba('contas_pagamento')}
+        >
+          Contas de pagamento
+        </button>
       </nav>
 
       {aba === 'lancamentos' && <LancamentosTab />}
       {aba === 'fornecedores' && <FornecedoresTab />}
       {aba === 'grupos' && <GruposDespesaTab />}
+      {aba === 'contas_pagamento' && <ContasPagamentoTab />}
     </div>
   )
 }

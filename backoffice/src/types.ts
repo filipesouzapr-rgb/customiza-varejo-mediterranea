@@ -148,6 +148,29 @@ export interface ContaPagar {
   forma_pagamento: FormaPagamentoContasPagar | null
   status: 'nao_conciliado' | 'conciliado'
   regra_id: string | null
+  conta_pagamento_id: string | null
+}
+
+export interface ContaPagamento {
+  id: string
+  nome: string
+  saldo_inicial: number
+  ativo: boolean
+  empresa_id: string
+}
+
+export interface ContaPagamentoSaldo extends ContaPagamento {
+  saldo_atual: number
+}
+
+export interface MovimentacaoContaPagamento {
+  id: string
+  conta_pagamento_id: string
+  tipo: 'entrada' | 'saida'
+  valor: number
+  data: string
+  conta_a_pagar_id: string | null
+  descricao: string | null
 }
 
 export interface ProdutoPeca {

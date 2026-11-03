@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
+import { CHAVE_POPUP_VENCIMENTO_MOSTRADO } from './popupVencimentoHoje'
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null)
@@ -12,7 +13,14 @@ export function useSession() {
       setLoading(false)
     })
 
-    const { data: subscription } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_OUT') {
+        try {
+          sessionStorage.removeItem(CHAVE_POPUP_VENCIMENTO_MOSTRADO)
+        } catch {
+          // sessionStorage indisponivel (ex: navegacao privada)
+        }
+      }
       setSession(session)
     })
 
