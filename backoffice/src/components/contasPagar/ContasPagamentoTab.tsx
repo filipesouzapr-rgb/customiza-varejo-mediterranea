@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../../lib/supabase'
 import { AporteModal } from './AporteModal'
+import { ExtratoContaPagamentoModal } from './ExtratoContaPagamentoModal'
 import type { ContaPagamentoSaldo } from '../../types'
 
 const formVazio = { id: null as string | null, nome: '', saldoInicial: '' }
@@ -17,6 +18,7 @@ export function ContasPagamentoTab() {
   const [form, setForm] = useState(formVazio)
   const [salvando, setSalvando] = useState(false)
   const [contaAporte, setContaAporte] = useState<ContaPagamentoSaldo | null>(null)
+  const [contaExtrato, setContaExtrato] = useState<ContaPagamentoSaldo | null>(null)
 
   async function carregar() {
     setCarregando(true)
@@ -118,6 +120,9 @@ export function ContasPagamentoTab() {
                     <td>{moeda(Number(c.saldo_atual))}</td>
                     <td>{c.ativo ? 'Sim' : 'Não'}</td>
                     <td className="produtos-lista-acoes">
+                      <button type="button" onClick={() => setContaExtrato(c)}>
+                        Ver extrato
+                      </button>
                       <button type="button" onClick={() => setContaAporte(c)}>
                         + Aporte
                       </button>
@@ -143,6 +148,10 @@ export function ContasPagamentoTab() {
 
       {contaAporte && (
         <AporteModal conta={contaAporte} onFechar={() => setContaAporte(null)} onCriado={carregar} />
+      )}
+
+      {contaExtrato && (
+        <ExtratoContaPagamentoModal conta={contaExtrato} onFechar={() => setContaExtrato(null)} />
       )}
     </div>
   )
