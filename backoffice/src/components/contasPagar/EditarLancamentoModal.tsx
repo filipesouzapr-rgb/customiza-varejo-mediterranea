@@ -330,7 +330,11 @@ export function EditarLancamentoModal({
                   Forma de pagamento
                   <select
                     value={formaPagamento}
-                    onChange={(e) => setFormaPagamento(e.target.value as FormaPagamentoContasPagar)}
+                    onChange={(e) => {
+                      const forma = e.target.value as FormaPagamentoContasPagar
+                      setFormaPagamento(forma)
+                      if (forma !== 'cartao_credito') setContaPagamentoId('')
+                    }}
                   >
                     {(Object.keys(rotuloForma) as FormaPagamentoContasPagar[]).map((forma) => (
                       <option key={forma} value={forma}>
@@ -339,17 +343,19 @@ export function EditarLancamentoModal({
                     ))}
                   </select>
                 </label>
-                <label>
-                  Conta de pagamento (opcional)
-                  <select value={contaPagamentoId} onChange={(e) => setContaPagamentoId(e.target.value)}>
-                    <option value="">— nenhuma —</option>
-                    {contasPagamento.map((c) => (
-                      <option key={c.id} value={c.id}>
-                        {c.nome}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                {formaPagamento === 'cartao_credito' && (
+                  <label>
+                    Conta de pagamento (opcional)
+                    <select value={contaPagamentoId} onChange={(e) => setContaPagamentoId(e.target.value)}>
+                      <option value="">— nenhuma —</option>
+                      {contasPagamento.map((c) => (
+                        <option key={c.id} value={c.id}>
+                          {c.nome}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
                 <div className="modal-acoes">
                   <button type="button" onClick={confirmarConciliacao} disabled={salvando}>
                     {salvando ? 'Confirmando...' : 'Confirmar pagamento'}
