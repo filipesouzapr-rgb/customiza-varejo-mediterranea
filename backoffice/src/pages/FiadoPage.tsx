@@ -353,11 +353,20 @@ export function FiadoPage() {
       totalComprado += v.total
       totalPago += pago
       totalFalta += falta
+
+      // Pago parcial precisa deixar claro quanto ja foi pago e quanto ainda
+      // falta - "Pago parcial" sozinho nao diz o suficiente num resumo
+      // impresso (o mesmo detalhe ja aparece na tela, como badge).
+      const situacaoTexto =
+        pago > 0.004 && falta > 0.004
+          ? `${rotuloSituacao[v.situacao]} (${moeda(pago)} pago · falta ${moeda(falta)})`
+          : rotuloSituacao[v.situacao]
+
       return {
         data: new Date(v.finalizada_em).toLocaleDateString('pt-BR'),
         pedido: v.id.slice(0, 8).toUpperCase(),
         valor: moeda(v.total),
-        situacao: rotuloSituacao[v.situacao],
+        situacao: situacaoTexto,
       }
     }
 
