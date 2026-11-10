@@ -374,14 +374,14 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
     onAtualizado()
   }
 
-  function baixarPdf() {
+  function baixarPdf(mostrarValores: boolean) {
     gerarPdfPedido({
       numeroPedido: vendaId.slice(0, 8).toUpperCase(),
       dataHora: dataVendaInput
         ? new Date(deDatetimeLocal(dataVendaInput)).toLocaleString('pt-BR')
         : '—',
       cliente: clienteNome,
-      mostrarValores: true,
+      mostrarValores,
       itens: itens.map((i) => ({
         nome: i.nome,
         quantidade: Number(i.quantidade) || 0,
@@ -631,8 +631,11 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
           </div>
 
             <div className="modal-acoes pedido-admin-rodape">
-              <button type="button" onClick={baixarPdf}>
-                Baixar PDF
+              <button type="button" onClick={() => baixarPdf(true)}>
+                Baixar PDF com valores
+              </button>
+              <button type="button" onClick={() => baixarPdf(false)}>
+                Baixar PDF sem valores
               </button>
               {podeCancelar && (
                 <button type="button" onClick={cancelarPedido} disabled={salvando}>

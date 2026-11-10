@@ -639,6 +639,22 @@ tr.inativo {
   font-size: 13px;
 }
 
+.venda-pagamentos-lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.venda-pagamentos-lista li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+}
+
 .pedido-admin-pagamento-linha {
   display: flex;
   gap: 8px;
