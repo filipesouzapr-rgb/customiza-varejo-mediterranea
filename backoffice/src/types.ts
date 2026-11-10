@@ -67,6 +67,15 @@ export interface Pagamento {
   valor: number
 }
 
+export interface ClientePreco {
+  id: string
+  cliente_id: string
+  produto_id: string
+  preco: number
+  criado_em: string
+  atualizado_em: string
+}
+
 export interface Cliente {
   id: string
   nome: string

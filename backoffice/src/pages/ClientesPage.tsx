@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
 import { useParamUrl } from '../lib/useParamUrl'
+import { PrecosPassadorModal } from '../components/PrecosPassadorModal'
 import type { Cliente, SaldoFiadoCliente } from '../types'
 
 const formVazio = {
@@ -23,6 +24,7 @@ export function ClientesPage() {
   const [erro, setErro] = useState<string | null>(null)
   const [form, setForm] = useState(formVazio)
   const [salvando, setSalvando] = useState(false)
+  const [clientePrecos, setClientePrecos] = useState<Cliente | null>(null)
   const [filtroTexto, setFiltroTexto] = useParamUrl('mostrar', 'todos')
   const filtroRevendedor = filtroTexto as FiltroRevendedor
   const setFiltroRevendedor = setFiltroTexto
@@ -244,6 +246,11 @@ export function ClientesPage() {
                       <button type="button" onClick={() => editar(cliente)}>
                         Editar
                       </button>
+                      {cliente.eh_revendedor && (
+                        <button type="button" onClick={() => setClientePrecos(cliente)}>
+                          Preços
+                        </button>
+                      )}
                       <button type="button" onClick={() => alternarAtivo(cliente)}>
                         {cliente.ativo ? 'Desativar' : 'Reativar'}
                       </button>
@@ -260,6 +267,10 @@ export function ClientesPage() {
           </div>
         )}
       </section>
+
+      {clientePrecos && (
+        <PrecosPassadorModal cliente={clientePrecos} onFechar={() => setClientePrecos(null)} />
+      )}
     </div>
   )
 }

@@ -30,6 +30,7 @@ interface ClienteResumo {
   nome: string
   cpf: string | null
   telefone: string | null
+  eh_revendedor: boolean
 }
 
 type Modo = null | 'busca-produto' | 'cliente'
@@ -154,7 +155,32 @@ export function VendaPage({ operador }: Props) {
     if (impressao) window.print()
   }, [impressao])
 
-  const totalCarrinho = itens.reduce((soma, i) => soma + i.quantidade * i.produto.preco, 0)
+  // So pro preview de total do admin (pagamento na hora) - o preco real
+  // cobrado e' sempre resolvido no servidor, em finalizar_venda, a partir
+  // do cliente atual no momento de finalizar (nunca do que foi mostrado
+  // aqui). Troca de cliente recalcula so por isso ja depender de cliente.id.
+  const [precosPassador, setPrecosPassador] = useState<Record<string, number>>({})
+  useEffect(() => {
+    if (!podeConciliarNaHora || !cliente?.eh_revendedor) {
+      setPrecosPassador({})
+      return
+    }
+    supabase
+      .from('cliente_precos')
+      .select('produto_id, preco')
+      .eq('cliente_id', cliente.id)
+      .then(({ data }) => {
+        setPrecosPassador(
+          Object.fromEntries(((data as { produto_id: string; preco: number }[]) ?? []).map((p) => [p.produto_id, Number(p.preco)])),
+        )
+      })
+  }, [podeConciliarNaHora, cliente?.id, cliente?.eh_revendedor])
+
+  function precoDoItem(item: ItemCarrinho) {
+    return precosPassador[item.produto.id] ?? item.produto.preco
+  }
+
+  const totalCarrinho = itens.reduce((soma, i) => soma + i.quantidade * precoDoItem(i), 0)
 
   // Enquanto so houver 1 forma de pagamento e o admin nao tiver editado o
   // valor na mao, o valor acompanha o total do carrinho - assim basta
@@ -327,7 +353,7 @@ export function VendaPage({ operador }: Props) {
     }
     const { data } = await supabase
       .from('clientes')
-      .select('id, nome, cpf, telefone')
+      .select('id, nome, cpf, telefone, eh_revendedor')
       .or(`nome.ilike.%${query}%,cpf.ilike.%${query}%`)
       .eq('ativo', true)
       .limit(8)
@@ -397,12 +423,26 @@ export function VendaPage({ operador }: Props) {
       if (errConciliar) erroConciliacao = errConciliar.message
     }
 
+    // Le de volta o preco unitario REAL gravado em venda_itens (pode
+    // diferir do preco padrao se o cliente for passador) - garante que o
+    // recibo impresso mostra exatamente o que foi cobrado, nunca um preco
+    // so estimado no front.
+    const { data: itensGravados } = await supabase
+      .from('venda_itens')
+      .select('produto_id, preco_unitario')
+      .eq('venda_id', data)
+    const precoReal = new Map((itensGravados ?? []).map((i) => [i.produto_id, Number(i.preco_unitario)]))
+    const itensComPrecoReal = itens.map((item) => ({
+      ...item,
+      produto: { ...item.produto, preco: precoReal.get(item.produto.id) ?? item.produto.preco },
+    }))
+
     setFinalizando(false)
     setVendaConcluida({
       vendaId: data as string,
       dataHora: new Date(),
       cliente,
-      itens,
+      itens: itensComPrecoReal,
       pagamentos: pagamentosConfirmados,
       erroConciliacao,
     })
