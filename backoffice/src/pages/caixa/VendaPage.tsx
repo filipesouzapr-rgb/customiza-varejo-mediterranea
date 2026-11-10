@@ -3,12 +3,22 @@ import type { FormEvent } from 'react'
 import { supabase } from '../../lib/supabase'
 import { NOME_ESTABELECIMENTO } from '../../lib/config'
 import { useRelogio } from '../../lib/useRelogio'
+import { rotuloForma } from '../../lib/situacaoVenda'
 import { SeletorModal } from '../../components/caixa/SeletorModal'
 import { TerminalFrame } from '../../components/caixa/TerminalFrame'
 import { PedidoA4 } from '../../components/PedidoA4'
 import { gerarPdfPedido } from '../../lib/pdfPedido'
 import logoCustomiza from '../../assets/logo-customiza.png'
-import type { ItemCarrinho, Operador, Produto } from '../../types'
+import type { FormaPagamento, ItemCarrinho, Operador, Produto } from '../../types'
+
+interface PagamentoForm {
+  forma: FormaPagamento
+  valor: string
+}
+
+function moeda(valor: number) {
+  return valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+}
 
 interface Props {
   operador: Operador
@@ -28,6 +38,8 @@ interface VendaConcluida {
   dataHora: Date
   cliente: ClienteResumo
   itens: ItemCarrinho[]
+  pagamentos: PagamentoForm[] | null
+  erroConciliacao: string | null
 }
 
 export function VendaPage({ operador }: Props) {
@@ -51,6 +63,13 @@ export function VendaPage({ operador }: Props) {
   const [vendaConcluida, setVendaConcluida] = useState<VendaConcluida | null>(null)
   const [impressao, setImpressao] = useState<{ mostrarValores: boolean } | null>(null)
 
+  // So supervisor/dono escolhe a forma de pagamento aqui — permite finalizar
+  // e conciliar num unico passo, sem precisar reabrir o pedido depois em
+  // Vendas/Fiado. Operador normal nunca ve isso (nem o total).
+  const podeConciliarNaHora = operador.papel !== 'operador'
+  const [pagamentosForm, setPagamentosForm] = useState<PagamentoForm[]>([{ forma: 'dinheiro', valor: '' }])
+  const [pagamentoAutoTotal, setPagamentoAutoTotal] = useState(true)
+
   const inputCodigoRef = useRef<HTMLInputElement>(null)
   const agora = useRelogio()
 
@@ -73,6 +92,17 @@ export function VendaPage({ operador }: Props) {
   useEffect(() => {
     if (impressao) window.print()
   }, [impressao])
+
+  const totalCarrinho = itens.reduce((soma, i) => soma + i.quantidade * i.produto.preco, 0)
+
+  // Enquanto so houver 1 forma de pagamento e o admin nao tiver editado o
+  // valor na mao, o valor acompanha o total do carrinho - assim basta
+  // escolher a forma e apertar Finalizar no caso comum (pagamento unico).
+  useEffect(() => {
+    if (!podeConciliarNaHora || !pagamentoAutoTotal || pagamentosForm.length !== 1) return
+    setPagamentosForm([{ ...pagamentosForm[0], valor: totalCarrinho > 0 ? String(totalCarrinho) : '' }])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [totalCarrinho, podeConciliarNaHora])
 
   // Atalhos de teclado: F2 busca produto por nome, F4 vincula cliente
   // (obrigatório), F9 finaliza. Nada de valor passa por aqui — o operador
@@ -249,10 +279,34 @@ export function VendaPage({ operador }: Props) {
     setModo(null)
   }
 
+  const totalPagoForm = pagamentosForm.reduce((soma, p) => soma + (Number(p.valor) || 0), 0)
+  const restanteForm = Math.round((totalCarrinho - totalPagoForm) * 100) / 100
+
+  function atualizarPagamento(index: number, campo: 'forma' | 'valor', valor: string) {
+    if (campo === 'valor') setPagamentoAutoTotal(false)
+    setPagamentosForm((atual) => atual.map((p, i) => (i === index ? { ...p, [campo]: valor } : p)))
+  }
+
+  function adicionarLinhaPagamento() {
+    setPagamentoAutoTotal(false)
+    setPagamentosForm((atual) => [
+      ...atual,
+      { forma: 'dinheiro', valor: restanteForm > 0 ? String(restanteForm) : '' },
+    ])
+  }
+
+  function removerLinhaPagamento(index: number) {
+    setPagamentosForm((atual) => atual.filter((_, i) => i !== index))
+  }
+
   async function finalizarVenda() {
     if (itens.length === 0 || finalizando) return
     if (!cliente) {
       setErroFinalizar('Selecione um cliente (F4) antes de finalizar.')
+      return
+    }
+    if (podeConciliarNaHora && Math.abs(restanteForm) > 0.004) {
+      setErroFinalizar('A soma dos pagamentos precisa bater com o total da venda.')
       return
     }
 
@@ -265,16 +319,36 @@ export function VendaPage({ operador }: Props) {
       p_itens: itens.map((i) => ({ produto_id: i.produto.id, quantidade: i.quantidade })),
     })
 
-    setFinalizando(false)
-
     if (error) {
+      setFinalizando(false)
       setErroFinalizar(error.message)
       return
     }
 
-    setVendaConcluida({ vendaId: data as string, dataHora: new Date(), cliente, itens })
+    let erroConciliacao: string | null = null
+    const pagamentosConfirmados = podeConciliarNaHora ? pagamentosForm : null
+
+    if (podeConciliarNaHora) {
+      const { error: errConciliar } = await supabase.rpc('conciliar_venda', {
+        p_venda_id: data,
+        p_pagamentos: pagamentosForm.map((p) => ({ forma: p.forma, valor: Number(p.valor) || 0 })),
+      })
+      if (errConciliar) erroConciliacao = errConciliar.message
+    }
+
+    setFinalizando(false)
+    setVendaConcluida({
+      vendaId: data as string,
+      dataHora: new Date(),
+      cliente,
+      itens,
+      pagamentos: pagamentosConfirmados,
+      erroConciliacao,
+    })
     setItens([])
     setCliente(null)
+    setPagamentosForm([{ forma: 'dinheiro', valor: '' }])
+    setPagamentoAutoTotal(true)
     carregarProdutos()
   }
 
@@ -313,7 +387,23 @@ export function VendaPage({ operador }: Props) {
           <p>
             Cliente: {vendaConcluida.cliente.nome} — {vendaConcluida.itens.length} item(ns)
           </p>
-          <p className="venda-cliente-vazio">Pagamento a conciliar pelo admin.</p>
+          {vendaConcluida.pagamentos ? (
+            vendaConcluida.erroConciliacao ? (
+              <p className="erro">
+                Venda registrada, mas o pagamento não foi salvo ({vendaConcluida.erroConciliacao}) —
+                concilie pelo admin em Vendas/Fiado.
+              </p>
+            ) : (
+              <p className="venda-cliente-vazio">
+                Pagamento confirmado:{' '}
+                {vendaConcluida.pagamentos
+                  .map((p) => `${rotuloForma[p.forma]} ${moeda(Number(p.valor) || 0)}`)
+                  .join(' + ')}
+              </p>
+            )
+          ) : (
+            <p className="venda-cliente-vazio">Pagamento a conciliar pelo admin.</p>
+          )}
           {operador.papel === 'operador' ? (
             <div className="venda-confirmacao-acoes">
               <button type="button" onClick={() => imprimir(false)}>
@@ -540,6 +630,43 @@ export function VendaPage({ operador }: Props) {
               </div>
             )}
           </div>
+
+          {podeConciliarNaHora && (
+            <div className="cliente-box">
+              <div className="cliente-header">Forma de pagamento</div>
+              <hr className="cliente-rule" />
+              {pagamentosForm.map((p, i) => (
+                <div key={i} className="pedido-admin-pagamento-linha">
+                  <select value={p.forma} onChange={(e) => atualizarPagamento(i, 'forma', e.target.value)}>
+                    {(Object.keys(rotuloForma) as FormaPagamento[]).map((forma) => (
+                      <option key={forma} value={forma}>
+                        {rotuloForma[forma]}
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={p.valor}
+                    onChange={(e) => atualizarPagamento(i, 'valor', e.target.value)}
+                  />
+                  {pagamentosForm.length > 1 && (
+                    <button type="button" onClick={() => removerLinhaPagamento(i)}>
+                      Remover
+                    </button>
+                  )}
+                </div>
+              ))}
+              <button type="button" onClick={adicionarLinhaPagamento}>
+                + Dividir pagamento
+              </button>
+              <p className={restanteForm === 0 ? 'venda-cliente-vazio' : 'erro'}>
+                Total: {moeda(totalCarrinho)}
+                {restanteForm === 0 ? ' — soma bate.' : ` — falta ${moeda(Math.max(0, restanteForm))}.`}
+              </p>
+            </div>
+          )}
 
           {erroFinalizar && <p className="erro">{erroFinalizar}</p>}
 
