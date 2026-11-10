@@ -4,6 +4,7 @@ import { supabase } from '../../lib/supabase'
 import { NOME_ESTABELECIMENTO } from '../../lib/config'
 import { useRelogio } from '../../lib/useRelogio'
 import { FORMAS_VENDA_SELECIONAVEIS, rotuloForma } from '../../lib/situacaoVenda'
+import { CHAVE_CARRINHO_VENDA } from '../../lib/carrinhoVenda'
 import { SeletorModal } from '../../components/caixa/SeletorModal'
 import { TerminalFrame } from '../../components/caixa/TerminalFrame'
 import { PedidoA4 } from '../../components/PedidoA4'
@@ -42,6 +43,13 @@ interface VendaConcluida {
   erroConciliacao: string | null
 }
 
+interface CarrinhoSalvo {
+  itens: { produtoId: string; quantidade: number }[]
+  cliente: ClienteResumo | null
+  pagamentosForm: PagamentoForm[]
+  pagamentoAutoTotal: boolean
+}
+
 export function VendaPage({ operador }: Props) {
   const [produtos, setProdutos] = useState<Produto[]>([])
   const [codigo, setCodigo] = useState('')
@@ -70,6 +78,12 @@ export function VendaPage({ operador }: Props) {
   const [pagamentosForm, setPagamentosForm] = useState<PagamentoForm[]>([{ forma: 'dinheiro', valor: '' }])
   const [pagamentoAutoTotal, setPagamentoAutoTotal] = useState(true)
 
+  // Pedido em andamento sobrevive a trocar de tela e voltar (sessionStorage)
+  // - so pode comecar a salvar DEPOIS de tentar restaurar, senao o estado
+  // inicial vazio sobrescreve o carrinho salvo antes da restauracao rodar.
+  const [podeSalvarCarrinho, setPodeSalvarCarrinho] = useState(false)
+  const carrinhoRestauradoRef = useRef(false)
+
   const inputCodigoRef = useRef<HTMLInputElement>(null)
   const agora = useRelogio()
 
@@ -84,6 +98,53 @@ export function VendaPage({ operador }: Props) {
   useEffect(() => {
     carregarProdutos()
   }, [])
+
+  // Restaura o pedido em andamento so depois que `produtos` carrega (precisa
+  // dele pra resolver o objeto Produto completo, com preco/estoque atuais,
+  // a partir do id salvo) - roda 1x por montagem da tela.
+  useEffect(() => {
+    if (carrinhoRestauradoRef.current || produtos.length === 0) return
+    carrinhoRestauradoRef.current = true
+
+    try {
+      const salvo = sessionStorage.getItem(CHAVE_CARRINHO_VENDA)
+      if (salvo) {
+        const dados = JSON.parse(salvo) as CarrinhoSalvo
+        const itensRestaurados = dados.itens
+          .map((item) => {
+            const produto = produtos.find((p) => p.id === item.produtoId)
+            return produto ? { produto, quantidade: item.quantidade } : null
+          })
+          .filter((item): item is ItemCarrinho => item !== null)
+        setItens(itensRestaurados)
+        if (dados.cliente) setCliente(dados.cliente)
+        if (dados.pagamentosForm?.length) setPagamentosForm(dados.pagamentosForm)
+        if (typeof dados.pagamentoAutoTotal === 'boolean') setPagamentoAutoTotal(dados.pagamentoAutoTotal)
+      }
+    } catch {
+      // carrinho salvo corrompido/sessionStorage indisponivel - comeca vazio
+    }
+    setPodeSalvarCarrinho(true)
+  }, [produtos])
+
+  useEffect(() => {
+    if (!podeSalvarCarrinho) return
+    try {
+      if (itens.length === 0 && !cliente) {
+        sessionStorage.removeItem(CHAVE_CARRINHO_VENDA)
+        return
+      }
+      const dados: CarrinhoSalvo = {
+        itens: itens.map((item) => ({ produtoId: item.produto.id, quantidade: item.quantidade })),
+        cliente,
+        pagamentosForm,
+        pagamentoAutoTotal,
+      }
+      sessionStorage.setItem(CHAVE_CARRINHO_VENDA, JSON.stringify(dados))
+    } catch {
+      // sessionStorage indisponivel (ex: navegacao privada) - so perde a lembranca
+    }
+  }, [podeSalvarCarrinho, itens, cliente, pagamentosForm, pagamentoAutoTotal])
 
   useEffect(() => {
     if (modo === null && !produtoQuantidadePendente && !vendaConcluida) inputCodigoRef.current?.focus()

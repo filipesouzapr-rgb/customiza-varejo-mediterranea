@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { Session } from '@supabase/supabase-js'
 import { supabase } from './supabase'
 import { CHAVE_POPUP_VENCIMENTO_MOSTRADO } from './popupVencimentoHoje'
+import { CHAVE_CARRINHO_VENDA } from './carrinhoVenda'
 
 export function useSession() {
   const [session, setSession] = useState<Session | null>(null)
@@ -17,6 +18,7 @@ export function useSession() {
       if (event === 'SIGNED_OUT') {
         try {
           sessionStorage.removeItem(CHAVE_POPUP_VENCIMENTO_MOSTRADO)
+          sessionStorage.removeItem(CHAVE_CARRINHO_VENDA)
         } catch {
           // sessionStorage indisponivel (ex: navegacao privada)
         }
