@@ -166,7 +166,7 @@ export function ClientesPage() {
               checked={form.eh_revendedor}
               onChange={(e) => setForm({ ...form, eh_revendedor: e.target.checked })}
             />
-            É revendedor
+            É passador
           </label>
           <div className="clientes-form-acoes">
             <button type="submit" disabled={salvando}>
@@ -194,8 +194,8 @@ export function ClientesPage() {
               onChange={(e) => setFiltroRevendedor(e.target.value as FiltroRevendedor)}
             >
               <option value="todos">Todos</option>
-              <option value="revendedores">Só revendedores</option>
-              <option value="nao-revendedores">Só não revendedores</option>
+              <option value="revendedores">Só passadores</option>
+              <option value="nao-revendedores">Só não passadores</option>
             </select>
           </label>
         </div>
@@ -212,7 +212,7 @@ export function ClientesPage() {
                 <th>Telefone</th>
                 <th>Limite fiado</th>
                 <th>Venc.</th>
-                <th>Revendedor</th>
+                <th>Passador</th>
                 <th>Ativo</th>
                 <th></th>
               </tr>
