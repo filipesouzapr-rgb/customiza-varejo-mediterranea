@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { ProdutoPecasModal } from '../components/ProdutoPecasModal'
+import { HistoricoEstoqueModal } from '../components/HistoricoEstoqueModal'
 import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
 import { useParamUrl } from '../lib/useParamUrl'
 import type { Produto, UnidadeProduto } from '../types'
@@ -14,6 +15,7 @@ const formVazio = {
   preco: '',
   categoria: '',
   estoque_atual: '',
+  motivoAjuste: '',
 }
 
 export function ProdutosPage() {
@@ -23,6 +25,7 @@ export function ProdutosPage() {
   const [form, setForm] = useState(formVazio)
   const [salvando, setSalvando] = useState(false)
   const [produtoPecas, setProdutoPecas] = useState<Produto | null>(null)
+  const [produtoHistorico, setProdutoHistorico] = useState<Produto | null>(null)
   const [buscaProduto, setBuscaProduto] = useParamUrl('q', '')
 
   async function carregarProdutos() {
@@ -50,6 +53,7 @@ export function ProdutosPage() {
       preco: String(produto.preco),
       categoria: produto.categoria ?? '',
       estoque_atual: String(produto.estoque_atual),
+      motivoAjuste: '',
     })
   }
 
@@ -68,26 +72,48 @@ export function ProdutosPage() {
     setErro(null)
     setSalvando(true)
 
+    const novoEstoque = form.estoque_atual === '' ? 0 : Number(form.estoque_atual)
+
+    // Em produto novo, estoque_atual entra junto (o trigger registra como
+    // saldo_inicial). Em edicao, o estoque so muda via ajustar_estoque_manual
+    // (nunca no mesmo update dos outros campos) - e' o unico jeito do
+    // historico saber o motivo e classificar como ajuste manual.
     const payload = {
       nome: form.nome,
       codigo_barras: form.codigo_barras.trim() === '' ? null : form.codigo_barras.trim(),
       unidade: form.unidade,
       preco: Number(form.preco),
       categoria: form.categoria.trim() === '' ? null : form.categoria.trim(),
-      estoque_atual: form.estoque_atual === '' ? 0 : Number(form.estoque_atual),
+      ...(form.id ? {} : { estoque_atual: novoEstoque }),
     }
 
     const { error } = form.id
       ? await supabase.from('produtos').update(payload).eq('id', form.id)
       : await supabase.from('produtos').insert(payload)
 
-    setSalvando(false)
-
     if (error) {
+      setSalvando(false)
       setErro(error.message)
       return
     }
 
+    if (form.id) {
+      const original = produtos.find((p) => p.id === form.id)
+      if (original && novoEstoque !== Number(original.estoque_atual)) {
+        const { error: erroEstoque } = await supabase.rpc('ajustar_estoque_manual', {
+          p_produto_id: form.id,
+          p_novo_estoque: novoEstoque,
+          p_motivo: form.motivoAjuste.trim() || null,
+        })
+        if (erroEstoque) {
+          setSalvando(false)
+          setErro(erroEstoque.message)
+          return
+        }
+      }
+    }
+
+    setSalvando(false)
     setForm(formVazio)
     carregarProdutos()
   }
@@ -178,6 +204,16 @@ export function ProdutosPage() {
               onChange={(e) => setForm({ ...form, estoque_atual: e.target.value })}
             />
           </label>
+          {form.id && (
+            <label>
+              Motivo do ajuste de estoque (opcional)
+              <input
+                value={form.motivoAjuste}
+                onChange={(e) => setForm({ ...form, motivoAjuste: e.target.value })}
+                placeholder="contagem, perda, quebra..."
+              />
+            </label>
+          )}
           <div className="produtos-form-acoes">
             <button type="submit" disabled={salvando}>
               {salvando ? 'Salvando...' : form.id ? 'Salvar alterações' : 'Adicionar produto'}
@@ -247,6 +283,9 @@ export function ProdutosPage() {
                       <button type="button" onClick={() => setProdutoPecas(produto)}>
                         Peças
                       </button>
+                      <button type="button" onClick={() => setProdutoHistorico(produto)}>
+                        Histórico
+                      </button>
                       <button type="button" onClick={() => alternarAtivo(produto)}>
                         {produto.ativo ? 'Desativar' : 'Reativar'}
                       </button>
@@ -270,6 +309,10 @@ export function ProdutosPage() {
 
       {produtoPecas && (
         <ProdutoPecasModal produto={produtoPecas} onFechar={() => setProdutoPecas(null)} />
+      )}
+
+      {produtoHistorico && (
+        <HistoricoEstoqueModal produto={produtoHistorico} onFechar={() => setProdutoHistorico(null)} />
       )}
     </div>
   )

@@ -53,6 +53,7 @@ export function AppLayout() {
           <NavLink to={linkComFiltros('/contas-pagar')}>Contas a pagar</NavLink>
           <NavLink to={linkComFiltros('/quebras')}>Quebras</NavLink>
           <NavLink to={linkComFiltros('/vendidos')}>Qtd. vendida</NavLink>
+          <NavLink to={linkComFiltros('/estoque-movimentacoes')}>Movimentações</NavLink>
           <NavLink to="/caixa">Caixa</NavLink>
           <NavLink to="/parametros">Parâmetros</NavLink>
         </nav>

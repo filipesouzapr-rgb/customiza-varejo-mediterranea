@@ -18,6 +18,27 @@ export interface Produto {
 export type NovoProduto = Pick<Produto, 'nome' | 'unidade' | 'preco'> &
   Partial<Pick<Produto, 'codigo_barras' | 'categoria' | 'estoque_atual'>>
 
+export type TipoEstoqueMovimentacao =
+  | 'venda'
+  | 'cancelamento_venda'
+  | 'entrada'
+  | 'ajuste_manual'
+  | 'importacao_nf'
+  | 'saldo_inicial'
+
+export interface EstoqueMovimentacao {
+  id: string
+  produto_id: string
+  data_hora: string
+  quantidade_antes: number
+  quantidade_depois: number
+  diferenca: number
+  tipo: TipoEstoqueMovimentacao
+  motivo: string | null
+  usuario_id: string | null
+  venda_id: string | null
+}
+
 export interface Operador {
   id: string
   nome: string

@@ -11,6 +11,7 @@ import { ContasPagarPage } from './pages/ContasPagarPage'
 import { ParametrosPage } from './pages/ParametrosPage'
 import { QuebrasPage } from './pages/QuebrasPage'
 import { RelatorioVendidosPage } from './pages/RelatorioVendidosPage'
+import { EstoqueMovimentacoesPage } from './pages/EstoqueMovimentacoesPage'
 import { DashboardPage } from './pages/DashboardPage'
 import { CaixaApp, SemAcesso } from './pages/caixa/CaixaApp'
 import { PopupVencimentoHoje } from './components/PopupVencimentoHoje'
@@ -111,6 +112,7 @@ function AppRoutes({ operador, rotaInicial }: { operador: Operador; rotaInicial:
           <Route path="/contas-pagar" element={<ContasPagarPage />} />
           <Route path="/quebras" element={<QuebrasPage />} />
           <Route path="/vendidos" element={<RelatorioVendidosPage />} />
+          <Route path="/estoque-movimentacoes" element={<EstoqueMovimentacoesPage />} />
           <Route path="/parametros" element={<ParametrosPage />} />
         </Route>
         <Route path="/" element={<Navigate to={rotaInicial} replace />} />

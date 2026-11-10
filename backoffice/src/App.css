@@ -639,6 +639,13 @@ tr.inativo {
   font-size: 13px;
 }
 
+.historico-estoque-consulta {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
 .venda-pagamentos-lista {
   list-style: none;
   margin: 0;
