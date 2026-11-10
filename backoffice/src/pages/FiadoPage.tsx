@@ -3,6 +3,7 @@ import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
 import { useParamUrl } from '../lib/useParamUrl'
+import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
 import type { PedidoPendente, SaldoFiadoCliente } from '../types'
 import { classeBadgeSituacao, rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
 import type { SituacaoVenda } from '../lib/situacaoVenda'
@@ -15,6 +16,8 @@ interface VendaCompra {
   situacao: SituacaoVenda
   pagoParcial: number | null
   saldoFiado: number | null
+  fiadoTotal: number
+  quitado: number
 }
 
 interface VendaCompraRaw {
@@ -111,6 +114,8 @@ export function FiadoPage() {
 
   const [inicio, setInicio] = useParamUrl('de', trintaDiasAtras())
   const [fim, setFim] = useParamUrl('ate', hoje())
+  const [filtroSituacaoTexto, setFiltroSituacaoTexto] = useParamUrl('situacao', 'todos')
+  const filtroSituacao = filtroSituacaoTexto as SituacaoVenda | 'todos'
   const [vendas, setVendas] = useState<VendaCompra[]>([])
   const [pagamentos, setPagamentos] = useState<PagamentoLinha[]>([])
   const [carregandoDetalhe, setCarregandoDetalhe] = useState(false)
@@ -204,6 +209,10 @@ export function FiadoPage() {
               pago_em: q.fiado_pagamentos?.pago_em ?? '',
             })),
           })
+          const fiadoTotal = (v.venda_pagamentos ?? [])
+            .filter((p) => p.forma === 'fiado')
+            .reduce((soma, p) => soma + Number(p.valor), 0)
+          const quitado = (v.fiado_pagamento_vendas ?? []).reduce((soma, q) => soma + Number(q.valor), 0)
           return {
             id: v.id,
             total: v.total,
@@ -211,6 +220,8 @@ export function FiadoPage() {
             situacao,
             pagoParcial,
             saldoFiado,
+            fiadoTotal,
+            quitado,
           }
         }),
       )
@@ -327,6 +338,46 @@ export function FiadoPage() {
     c.nome.toLowerCase().includes(buscaCliente.trim().toLowerCase()),
   )
 
+  const vendasFiltradas = vendas.filter((v) => filtroSituacao === 'todos' || v.situacao === filtroSituacao)
+
+  function gerarResumo() {
+    if (!clienteSelecionado) return
+
+    let totalComprado = 0
+    let totalPago = 0
+    let totalFalta = 0
+
+    const linhas = vendasFiltradas.map((v) => {
+      const falta = v.situacao === 'pendente' ? v.total : Math.max(0, v.fiadoTotal - v.quitado)
+      const pago = v.total - falta
+      totalComprado += v.total
+      totalPago += pago
+      totalFalta += falta
+      return [
+        new Date(v.finalizada_em).toLocaleDateString('pt-BR'),
+        v.id.slice(0, 8).toUpperCase(),
+        moeda(v.total),
+        rotuloSituacao[v.situacao],
+      ]
+    })
+
+    const periodoTexto = `${new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(fim + 'T00:00:00').toLocaleDateString('pt-BR')}`
+    const situacaoTexto = filtroSituacao === 'todos' ? '' : ` — ${rotuloSituacao[filtroSituacao]}`
+
+    gerarPdfRelatorio({
+      titulo: `Resumo de fiado — ${clienteSelecionado.nome} — ${periodoTexto}${situacaoTexto}`,
+      slug: `fiado-${clienteSelecionado.nome.toLowerCase().replace(/\s+/g, '-')}`,
+      colunas: ['Data', 'Pedido', 'Valor', 'Situação'],
+      linhas: [
+        ...linhas,
+        ['', '', '', ''],
+        ['Total comprado', '', '', moeda(totalComprado)],
+        ['Total já pago', '', '', moeda(totalPago)],
+        ['Falta pagar', '', '', moeda(totalFalta)],
+      ],
+    })
+  }
+
   return (
     <div className="fiado-page">
       <section className="fiado-pendentes">
@@ -423,6 +474,28 @@ export function FiadoPage() {
               Até
               <input type="date" value={fim} onChange={(e) => setFim(e.target.value)} />
             </label>
+            <div className="filtro-situacao">
+              {(
+                [
+                  ['todos', 'Todos'],
+                  ['pago', 'Pago'],
+                  ['fiado', 'Fiado'],
+                  ['pago_parcial', 'Pago parcial'],
+                ] as const
+              ).map(([valor, rotulo]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  className={filtroSituacao === valor ? 'ativo' : ''}
+                  onClick={() => setFiltroSituacaoTexto(valor)}
+                >
+                  {rotulo}
+                </button>
+              ))}
+            </div>
+            <button type="button" onClick={gerarResumo}>
+              Imprimir resumo
+            </button>
           </div>
 
           {carregandoDetalhe ? (
@@ -440,7 +513,7 @@ export function FiadoPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {vendas.map((v) => (
+                    {vendasFiltradas.map((v) => (
                       <tr key={v.id} className="linha-clicavel" onClick={() => setPedidoAberto(v.id)}>
                         <td>{new Date(v.finalizada_em).toLocaleString('pt-BR')}</td>
                         <td>{moeda(v.total)}</td>
@@ -456,9 +529,9 @@ export function FiadoPage() {
                         </td>
                       </tr>
                     ))}
-                    {vendas.length === 0 && (
+                    {vendasFiltradas.length === 0 && (
                       <tr>
-                        <td colSpan={3}>Nenhuma compra no período.</td>
+                        <td colSpan={3}>Nenhuma compra no período/filtro selecionado.</td>
                       </tr>
                     )}
                   </tbody>
