@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { supabase } from '../lib/supabase'
 import { PedidoAdminModal } from '../components/PedidoAdminModal'
 import { useParamUrl } from '../lib/useParamUrl'
-import { gerarPdfRelatorio } from '../lib/pdfRelatorio'
+import { gerarPdfResumoFiado } from '../lib/pdfResumoFiado'
 import type { PedidoPendente, SaldoFiadoCliente } from '../types'
 import { classeBadgeSituacao, rotuloSituacao, situacaoVenda } from '../lib/situacaoVenda'
 import type { SituacaoVenda } from '../lib/situacaoVenda'
@@ -347,34 +347,37 @@ export function FiadoPage() {
     let totalPago = 0
     let totalFalta = 0
 
-    const linhas = vendasFiltradas.map((v) => {
+    function linhaDe(v: VendaCompra) {
       const falta = v.situacao === 'pendente' ? v.total : Math.max(0, v.fiadoTotal - v.quitado)
       const pago = v.total - falta
       totalComprado += v.total
       totalPago += pago
       totalFalta += falta
-      return [
-        new Date(v.finalizada_em).toLocaleDateString('pt-BR'),
-        v.id.slice(0, 8).toUpperCase(),
-        moeda(v.total),
-        rotuloSituacao[v.situacao],
-      ]
-    })
+      return {
+        data: new Date(v.finalizada_em).toLocaleDateString('pt-BR'),
+        pedido: v.id.slice(0, 8).toUpperCase(),
+        valor: moeda(v.total),
+        situacao: rotuloSituacao[v.situacao],
+      }
+    }
+
+    // Caixas separadas na impressao: pagos de um lado, tudo que ainda tem
+    // saldo (fiado, pago parcial, pendente de conciliacao) do outro.
+    const pagos = vendasFiltradas.filter((v) => v.situacao === 'pago').map(linhaDe)
+    const pendentes = vendasFiltradas.filter((v) => v.situacao !== 'pago').map(linhaDe)
 
     const periodoTexto = `${new Date(inicio + 'T00:00:00').toLocaleDateString('pt-BR')} a ${new Date(fim + 'T00:00:00').toLocaleDateString('pt-BR')}`
     const situacaoTexto = filtroSituacao === 'todos' ? '' : ` — ${rotuloSituacao[filtroSituacao]}`
 
-    gerarPdfRelatorio({
-      titulo: `Resumo de fiado — ${clienteSelecionado.nome} — ${periodoTexto}${situacaoTexto}`,
-      slug: `fiado-${clienteSelecionado.nome.toLowerCase().replace(/\s+/g, '-')}`,
-      colunas: ['Data', 'Pedido', 'Valor', 'Situação'],
-      linhas: [
-        ...linhas,
-        ['', '', '', ''],
-        ['Total comprado', '', '', moeda(totalComprado)],
-        ['Total já pago', '', '', moeda(totalPago)],
-        ['Falta pagar', '', '', moeda(totalFalta)],
-      ],
+    gerarPdfResumoFiado({
+      cliente: clienteSelecionado.nome,
+      periodo: periodoTexto,
+      situacaoFiltro: situacaoTexto,
+      pagos,
+      pendentes,
+      totalComprado: moeda(totalComprado),
+      totalPago: moeda(totalPago),
+      totalFalta: moeda(totalFalta),
     })
   }
 
