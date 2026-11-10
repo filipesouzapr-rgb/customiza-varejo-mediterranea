@@ -22,6 +22,11 @@ export const rotuloForma: Record<FormaPagamento, string> = {
   fiado: 'Fiado',
 }
 
+// A Mediterranea nao vende no cartao - formas disponiveis pra ESCOLHER ao
+// vender/conciliar/quitar. rotuloForma continua completo (acima) so pra
+// exibir corretamente qualquer pagamento antigo que por acaso exista.
+export const FORMAS_VENDA_SELECIONAVEIS: FormaPagamento[] = ['dinheiro', 'pix', 'fiado']
+
 export const classeBadgeSituacao: Record<SituacaoVenda, string> = {
   cancelada: 'badge-cancelado',
   pendente: 'badge-pendente',

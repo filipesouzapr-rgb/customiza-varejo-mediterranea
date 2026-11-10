@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { supabase } from '../../lib/supabase'
 import { NOME_ESTABELECIMENTO } from '../../lib/config'
 import { useRelogio } from '../../lib/useRelogio'
-import { rotuloForma } from '../../lib/situacaoVenda'
+import { FORMAS_VENDA_SELECIONAVEIS, rotuloForma } from '../../lib/situacaoVenda'
 import { SeletorModal } from '../../components/caixa/SeletorModal'
 import { TerminalFrame } from '../../components/caixa/TerminalFrame'
 import { PedidoA4 } from '../../components/PedidoA4'
@@ -638,7 +638,7 @@ export function VendaPage({ operador }: Props) {
               {pagamentosForm.map((p, i) => (
                 <div key={i} className="pedido-admin-pagamento-linha">
                   <select value={p.forma} onChange={(e) => atualizarPagamento(i, 'forma', e.target.value)}>
-                    {(Object.keys(rotuloForma) as FormaPagamento[]).map((forma) => (
+                    {FORMAS_VENDA_SELECIONAVEIS.map((forma) => (
                       <option key={forma} value={forma}>
                         {rotuloForma[forma]}
                       </option>

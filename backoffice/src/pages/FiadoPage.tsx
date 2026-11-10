@@ -45,12 +45,13 @@ function trintaDiasAtras() {
   return dataISO(d)
 }
 
-type FormaQuitacao = 'dinheiro' | 'cartao_debito' | 'cartao_credito' | 'pix'
+// A Mediterranea nao vende no cartao - cartao_debito/cartao_credito ficam
+// de fora das opcoes pra quitar fiado (o tipo de FormaPagamento continua
+// completo em situacaoVenda.ts so pra exibir pagamento antigo, se existir).
+type FormaQuitacao = 'dinheiro' | 'pix'
 
 const rotuloFormaQuitacao: Record<FormaQuitacao, string> = {
   dinheiro: 'Dinheiro',
-  cartao_debito: 'Cartão débito',
-  cartao_credito: 'Cartão crédito',
   pix: 'Pix',
 }
 

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase'
 import { SeletorModal } from './caixa/SeletorModal'
 import { gerarPdfPedido } from '../lib/pdfPedido'
 import { resumoPorCategoria, rotuloQuantidade } from '../lib/resumoCategoria'
+import { FORMAS_VENDA_SELECIONAVEIS } from '../lib/situacaoVenda'
 import type { FormaPagamento, Produto, UnidadeProduto } from '../types'
 
 interface Props {
@@ -551,7 +552,7 @@ export function PedidoAdminModal({ vendaId, onFechar, onAtualizado }: Props) {
                       value={p.forma}
                       onChange={(e) => atualizarPagamento(i, 'forma', e.target.value)}
                     >
-                      {(Object.keys(rotuloForma) as FormaPagamento[]).map((forma) => (
+                      {FORMAS_VENDA_SELECIONAVEIS.map((forma) => (
                         <option key={forma} value={forma}>
                           {rotuloForma[forma]}
                         </option>
